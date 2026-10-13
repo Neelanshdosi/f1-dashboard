@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 Race Analytics Pipeline | GCP Medallion Architecture</title>
+  <meta name="description" content="Formula 1 Race Strategy & Telemetry Analytics dashboard powered by PySpark, GCS, BigQuery and OpenF1 API.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="f1-badge">F1</div>
+        <div class="brand-text">
+          <h1>RACE STRATEGY & TELEMETRY ANALYTICS</h1>
+          <p>2024 Bahrain Grand Prix • GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div class="badge-pill">
+          <span class="badge-dot"></span>
+          <span>BigQuery Gold Layer Live</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Overview Metric Cards -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-title">Race Winner / P1</div>
+        <div class="metric-value" id="metric-winner">Max VERSTAPPEN</div>
+        <div class="metric-sub">Red Bull Racing • 25 Pts</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Fastest Lap</div>
+        <div class="metric-value" id="metric-fastest-lap">92.608s</div>
+        <div class="metric-sub">Lap 39 • Max VERSTAPPEN</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Field Pit Stops</div>
+        <div class="metric-value" id="metric-stops">43 Stops</div>
+        <div class="metric-sub">Avg 2.15 stops / driver</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Processed Records</div>
+        <div class="metric-value" id="metric-rows">51,415</div>
+        <div class="metric-sub">Telemetry, laps, stints, weather</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav" aria-label="Dashboard navigation">
+      <button class="tab-btn active" data-target="view-leaderboard">🏁 Race Leaderboard</button>
+      <button class="tab-btn" data-target="view-tyre">🛞 Tyre Degradation</button>
+      <button class="tab-btn" data-target="view-strategy">⏱️ Pit & Stint Matrix</button>
+      <button class="tab-btn" data-target="view-weather">🌡️ Weather Impact</button>
+      <button class="tab-btn" data-target="view-arch">⚙️ Data Architecture</button>
+    </nav>
+
+    <!-- Tab 1: Leaderboard View -->
+    <main>
+      <section id="view-leaderboard" class="view-content active">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Official Driver Classification & Strategy Overview</div>
+              <div class="panel-desc">Calculated by PySpark Gold Aggregations from 1,130 race laps and 43 pit events.</div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Driver</th>
+                  <th>Constructor</th>
+                  <th>Start Tyre</th>
+                  <th>Laps</th>
+                  <th>Fastest Lap</th>
+                  <th>Pit Stops</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboard-tbody">
+                <!-- Populated via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: Tyre Degradation View -->
+      <section id="view-tyre" class="view-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Tyre Pace Degradation Curves</div>
+              <div class="panel-desc">Lap time decay as tyre age increases, split by compound stints.</div>
+            </div>
+            <div class="controls-bar">
+              <label for="driver-select" style="font-size: 13px; font-weight: 600; color: var(--text-secondary);">Select Driver:</label>
+              <select id="driver-select">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div style="position: relative; height: 420px; width: 100%;">
+            <canvas id="tyreDegChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: Stint & Pit Strategy View -->
+      <section id="view-strategy" class="view-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Pit Stop & Tyre Stint Timeline (57 Laps)</div>
+              <div class="panel-desc">Proportional race tyre strategy by driver (Red = Soft, Yellow = Medium, White = Hard).</div>
+            </div>
+          </div>
+          <div class="timeline-container" id="timeline-list">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 4: Weather Impact View -->
+      <section id="view-weather" class="view-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Track & Ambient Weather Conditions</div>
+              <div class="panel-desc">Track cooling and temperature swings during night session at Bahrain International Circuit.</div>
+            </div>
+          </div>
+          <div style="position: relative; height: 380px; width: 100%;">
+            <canvas id="weatherChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 5: Architecture View -->
+      <section id="view-arch" class="view-content">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">End-to-End GCP Medallion Pipeline Architecture</div>
+              <div class="panel-desc">Designed following enterprise production data engineering best practices.</div>
+            </div>
+          </div>
+          <div class="arch-grid">
+            <div class="arch-node">
+              <h3><span>📥</span> 1. Ingestion (Bronze)</h3>
+              <ul>
+                <li>OpenF1 REST API (7 endpoints)</li>
+                <li>Token bucket rate-limiter (30 RPM)</li>
+                <li>Exponential back-off retry logic</li>
+                <li>Raw JSON partitioned on GCS</li>
+              </ul>
+            </div>
+            <div class="arch-node">
+              <h3><span>⚡</span> 2. PySpark (Silver)</h3>
+              <ul>
+                <li>Schema enforcement & UTC timestamps</li>
+                <li>Deduplication on session/lap keys</li>
+                <li>Calculated tyre_life & lap durations</li>
+                <li>Snappy-compressed Parquet on GCS</li>
+              </ul>
+            </div>
+            <div class="arch-node">
+              <h3><span>📊</span> 3. Analytics (Gold)</h3>
+              <ul>
+                <li>PySpark strategy aggregations</li>
+                <li>Partitioned & Clustered BigQuery tables</li>
+                <li>Tyre degradation delta curves</li>
+                <li>Loaded directly via GCS to BQ API</li>
+              </ul>
+            </div>
+            <div class="arch-node">
+              <h3><span>🌐</span> 4. Presentation</h3>
+              <ul>
+                <li>Cloud BI: Looker Studio BigQuery connector</li>
+                <li>Deployable Web UI (Zero dependency)</li>
+                <li>Interactive Chart.js visualizations</li>
+                <li>Free hosting via GitHub Pages</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
