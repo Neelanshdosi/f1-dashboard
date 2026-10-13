@@ -8,9 +8,7 @@ from pyspark.sql import SparkSession
 from spark_jobs.bronze_to_silver import get_spark_session
 from spark_jobs.silver_to_gold import (
     compute_driver_race_summary,
-    compute_pit_strategy,
     compute_tyre_degradation,
-    compute_weather_impact,
 )
 
 
