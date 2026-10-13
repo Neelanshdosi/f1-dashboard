@@ -10,9 +10,7 @@ from spark_jobs.bronze_to_silver import (
     transform_dim_drivers,
     transform_dim_sessions,
     transform_fct_laps,
-    transform_fct_pit,
     transform_fct_stints,
-    transform_fct_weather,
 )
 
 
