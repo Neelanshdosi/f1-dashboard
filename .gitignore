@@ -1,0 +1,42 @@
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Secrets
+*.json
+!package.json
+!dashboard/gold_data.json
+!docs/gold_data.json
+sa-key*.json
+
+# Local bronze data
+local_bronze/
+
+# Logs
+logs/
+*.log
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+
+# Spark
+derby.log
+metastore_db/
+spark-warehouse/
+
+# IDE
+.vscode/
+.idea/
+*.DS_Store

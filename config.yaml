@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────
+#  F1 Analytics Pipeline – Central Configuration
+# ─────────────────────────────────────────────
+gcp:
+  project_id: "${GCP_PROJECT_ID}"          # set via env-var or override here
+  region: "us-central1"
+  dataproc_sa: "${DATAPROC_SA}"            # Dataproc Serverless service account
+
+storage:
+  bucket: "${GCS_BUCKET}"                  # gs://<bucket>  (no gs:// prefix)
+  bronze_prefix: "bronze"
+  silver_prefix: "silver"
+  gold_prefix:   "gold"
+
+bigquery:
+  dataset: "f1_analytics"
+  location: "US"
+
+# ── Ingestion ────────────────────────────────
+openf1:
+  base_url: "https://api.openf1.org/v1"
+  rate_limit:
+    requests_per_minute: 30
+    requests_per_second: 3
+  retry:
+    max_attempts: 5
+    backoff_base_seconds: 2       # exponential: base^attempt + jitter
+    backoff_max_seconds: 60
+  timeout_seconds: 30
+
+# Endpoints to pull (order matters for dependency)
+endpoints:
+  - sessions
+  - drivers
+  - laps
+  - stints
+  - pit
+  - weather
+  - car_data
+
+# ── Scope ─────────────────────────────────────
+# Start small: 2–3 races, confirm row counts, then expand
+seasons:
+  - 2024
+
+# session_type filter: "Race" | "Qualifying" | "Sprint" | null (all)
+session_type_filter: "Race"
+
+# Limit races per season (null = all)
+max_sessions_per_season: 3
+
+# Telemetry can be huge; set a per-session row cap (null = no cap)
+car_data_row_cap: 50000
+
+# ── Spark ─────────────────────────────────────
+spark:
+  app_name: "f1_pipeline"
+  executor_memory: "4g"
+  driver_memory: "2g"
+  shuffle_partitions: 8
+
+# ── Logging ───────────────────────────────────
+logging:
+  level: "INFO"
+  format: "json"           # "json" | "text"
+  log_file: "logs/pipeline.log"
