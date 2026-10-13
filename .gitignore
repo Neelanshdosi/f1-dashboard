@@ -13,6 +13,7 @@ env/
 # Secrets
 *.json
 !package.json
+!vercel.json
 !dashboard/gold_data.json
 !docs/gold_data.json
 sa-key*.json
