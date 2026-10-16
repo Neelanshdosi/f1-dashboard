@@ -420,7 +420,6 @@ def _write_and_load_gold(
 ) -> int:
     import pyarrow as pa
     import pyarrow.parquet as pq
-    from google.cloud import bigquery
 
     rows = [r.asDict(recursive=True) for r in df.collect()]
     count = len(rows)
@@ -439,17 +438,47 @@ def _write_and_load_gold(
 
     # Load directly from GCS into BigQuery
     table_ref = f"{project_id}.f1_analytics.{table_name}"
-    job_config = bigquery.LoadJobConfig(
-        source_format=bigquery.SourceFormat.PARQUET,
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-        autodetect=True,
-    )
     gcs_uri = f"gs://{bucket.name}/{gcs_blob_name}"
-    load_job = bq_client.load_table_from_uri(gcs_uri, table_ref, job_config=job_config)
+    load_job = _load_gold_table_from_uri(
+        bq_client, gcs_uri, table_ref, table_name
+    )
     load_job.result()  # Wait for BQ load job to complete
     print(f"  Loaded into BigQuery: {table_ref} ({count:,} rows)")
 
     return count
+
+
+def _build_gold_load_job_config(table_name: str):
+    """Build a BigQuery load config from the canonical settings in config.yaml."""
+    import yaml
+    from google.cloud import bigquery
+
+    config_path = Path(__file__).resolve().parents[1] / "config.yaml"
+    with config_path.open(encoding="utf-8") as config_file:
+        settings = yaml.safe_load(config_file)["bigquery"]
+
+    partition = settings["session_key_partition"]
+    table_settings = settings["gold_tables"][table_name]
+    return bigquery.LoadJobConfig(
+        source_format=bigquery.SourceFormat.PARQUET,
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        autodetect=True,
+        range_partitioning=bigquery.RangePartitioning(
+            field="session_key",
+            range_=bigquery.PartitionRange(
+                start=partition["start"],
+                end=partition["end"],
+                interval=partition["interval"],
+            ),
+        ),
+        clustering_fields=table_settings["clustering_fields"],
+    )
+
+
+def _load_gold_table_from_uri(bq_client, gcs_uri: str, table_ref: str, table_name: str):
+    """Submit a Gold Parquet load with the table's configured layout."""
+    job_config = _build_gold_load_job_config(table_name)
+    return bq_client.load_table_from_uri(gcs_uri, table_ref, job_config=job_config)
 
 
 if __name__ == "__main__":

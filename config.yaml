@@ -15,6 +15,19 @@ storage:
 bigquery:
   dataset: "f1_analytics"
   location: "US"
+  session_key_partition:
+    start: 9000
+    end: 12000
+    interval: 1
+  gold_tables:
+    agg_driver_race_summary:
+      clustering_fields: [driver_number, team_name]
+    agg_tyre_degradation:
+      clustering_fields: [compound, driver_number]
+    agg_pit_strategy:
+      clustering_fields: [driver_number, compound]
+    agg_weather_impact:
+      clustering_fields: [session_key]
 
 # ── Ingestion ────────────────────────────────
 openf1:

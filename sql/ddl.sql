@@ -1,6 +1,9 @@
 -- =====================================================================
 -- BigQuery DDL for F1 Race Strategy Analytics (Gold Layer)
 -- Dataset: f1_analytics
+-- Queries filter by one race's session_key, so range partitioning on that key
+-- lets BigQuery prune unrelated sessions. Bounds match config.yaml
+-- bigquery.session_key_partition (9000 through 12000, interval 1).
 -- =====================================================================
 
 -- 1. Driver Race Summary
@@ -20,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_driver_race_summary` (
     starting_compound STRING,
     max_stint_length INT64
 )
-PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 10000, 1))
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY driver_number, team_name;
 
 
@@ -38,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_tyre_degradation` (
     stint_avg_lap_time FLOAT64,
     delta_to_stint_avg FLOAT64
 )
-PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 10000, 1))
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY compound, driver_number;
 
 
@@ -57,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_pit_strategy` (
     pit_duration FLOAT64,
     stop_duration FLOAT64
 )
-PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 10000, 1))
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY driver_number, compound;
 
 
@@ -74,5 +77,5 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_weather_impact` (
     rainfall INT64,
     field_avg_lap_time FLOAT64
 )
-PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 10000, 1))
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY session_key;
