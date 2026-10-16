@@ -59,11 +59,19 @@ seasons:
 # session_type filter: "Race" | "Qualifying" | "Sprint" | null (all)
 session_type_filter: "Race"
 
-# Limit races per season (null = all)
+# DEV SETTING: Limit races per season while validating locally (null = all).
 max_sessions_per_season: 3
 
-# Telemetry can be huge; set a per-session row cap (null = no cap)
+# DEV SETTING: Per-session telemetry cap while validating locally (null = no cap).
 car_data_row_cap: 50000
+
+# Full-run example (remove the leading # characters to process all sessions):
+# seasons:
+#   - 2023
+#   - 2024
+#   - 2025
+# max_sessions_per_season: null
+# car_data_row_cap: null
 
 # ── Spark ─────────────────────────────────────
 spark:
