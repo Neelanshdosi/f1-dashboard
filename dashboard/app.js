@@ -6,6 +6,7 @@
 let goldData = null;
 let tyreChart = null;
 let weatherChart = null;
+let selectedSessionKey = null;
 
 // Initialize on DOM load
 document.addEventListener("DOMContentLoaded", async () => {
@@ -38,12 +39,8 @@ async function loadData() {
   try {
     const res = await fetch("gold_data.json");
     goldData = await res.json();
-
-    renderOverviewMetrics();
-    renderLeaderboard();
-    initTyreDegradationControls();
-    renderStintTimelines();
-    renderWeatherChart();
+    initRaceSelector();
+    renderSelectedRace();
   } catch (err) {
     console.error("Failed to load gold_data.json:", err);
     document.getElementById("leaderboard-tbody").innerHTML = `
@@ -54,23 +51,73 @@ async function loadData() {
   }
 }
 
+function initRaceSelector() {
+  const select = document.getElementById("race-select");
+  const races = [...(goldData.races || [])].sort((a, b) =>
+    a.year - b.year || String(a.date || "").localeCompare(String(b.date || ""))
+  );
+  select.innerHTML = "";
+  races.forEach((race) => {
+    const option = document.createElement("option");
+    option.value = race.session_key;
+    option.textContent = race.name;
+    select.appendChild(option);
+  });
+  if (!races.length) return;
+  selectedSessionKey = (races.find((race) => race.name.includes("Abu Dhabi")) || races[races.length - 1]).session_key;
+  select.value = selectedSessionKey;
+  select.addEventListener("change", () => {
+    selectedSessionKey = Number(select.value);
+    renderSelectedRace();
+  });
+}
+
+function raceRows(key) {
+  return (goldData?.[key] || []).filter(
+    (row) => Number(row.session_key) === Number(selectedSessionKey)
+  );
+}
+
+function renderSelectedRace() {
+  const race = (goldData.races || []).find(
+    (item) => Number(item.session_key) === Number(selectedSessionKey)
+  );
+  if (!race) return;
+  document.getElementById("race-subtitle").textContent =
+    `${race.name} • GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)`;
+  renderOverviewMetrics();
+  renderLeaderboard();
+  initTyreDegradationControls();
+  renderStintTimelines();
+  renderWeatherChart();
+}
+
 // Render Top Overview Cards
 function renderOverviewMetrics() {
   if (!goldData || !goldData.driver_summary) return;
 
-  const drivers = goldData.driver_summary;
-  const fastest = drivers.reduce((prev, curr) => 
+  const drivers = raceRows("driver_summary");
+  if (!drivers.length) return;
+  const fastest = drivers.reduce((prev, curr) =>
     (curr.fastest_lap_seconds < prev.fastest_lap_seconds ? curr : prev), drivers[0]);
 
   document.getElementById("metric-winner").textContent = fastest.driver_name;
   document.getElementById("metric-fastest-lap").textContent = `${fastest.fastest_lap_seconds.toFixed(3)}s`;
+  document.getElementById("metric-winner-sub").textContent = fastest.team_name || "Fastest lap in selected race";
+  document.getElementById("metric-fastest-sub").textContent = `${fastest.name_acronym || ""} • ${fastest.team_name || ""}`;
 
-  // Total pit stops
+  // Totals and row counts for the selected session.
   const totalStops = drivers.reduce((sum, d) => sum + (d.total_pit_stops || 0), 0);
   document.getElementById("metric-stops").textContent = `${totalStops} Stops`;
-
-  // Telemetry points
-  document.getElementById("metric-rows").textContent = "51,415";
+  document.getElementById("metric-stops-sub").textContent = `${(totalStops / drivers.length).toFixed(1)} stops / driver`;
+  const rows = ["driver_summary", "pit_strategy", "tyre_degradation", "weather_impact"]
+    .reduce((sum, key) => sum + raceRows(key).length, 0);
+  document.getElementById("metric-rows").textContent = rows.toLocaleString();
+  const raceLaps = Math.max(...drivers.map((driver) => driver.total_laps || 0));
+  document.getElementById("leaderboard-desc").textContent =
+    `PySpark Gold metrics for ${raceLaps} laps and ${totalStops} pit events. Drivers are ordered by fastest lap.`;
+  document.getElementById("strategy-title").textContent = `Pit Stop & Tyre Stint Timeline (${raceLaps} Laps)`;
+  document.getElementById("weather-desc").textContent = `Track and ambient weather observations for ${raceRows("weather_impact").length} timestamps.`;
 }
 
 // Render Leaderboard Table
@@ -78,7 +125,9 @@ function renderLeaderboard() {
   const tbody = document.getElementById("leaderboard-tbody");
   if (!tbody || !goldData) return;
 
-  const drivers = goldData.driver_summary;
+  const drivers = [...raceRows("driver_summary")].sort(
+    (a, b) => (a.fastest_lap_seconds || Infinity) - (b.fastest_lap_seconds || Infinity)
+  );
   tbody.innerHTML = "";
 
   drivers.forEach((d, idx) => {
@@ -113,7 +162,8 @@ function initTyreDegradationControls() {
   if (!select || !goldData) return;
 
   select.innerHTML = "";
-  const uniqueDrivers = [...new Set(goldData.tyre_degradation.map(d => d.driver_name))];
+  const tyreRows = raceRows("tyre_degradation");
+  const uniqueDrivers = [...new Set(tyreRows.map(d => d.driver_name))];
 
   uniqueDrivers.forEach((name, i) => {
     const opt = document.createElement("option");
@@ -123,9 +173,7 @@ function initTyreDegradationControls() {
     select.appendChild(opt);
   });
 
-  select.addEventListener("change", () => {
-    updateTyreChart(select.value);
-  });
+  select.onchange = () => updateTyreChart(select.value);
 
   if (uniqueDrivers.length > 0) {
     updateTyreChart(uniqueDrivers[0]);
@@ -137,7 +185,7 @@ function updateTyreChart(selectedDriver) {
   const ctx = document.getElementById("tyreDegChart");
   if (!ctx || !goldData) return;
 
-  const laps = goldData.tyre_degradation
+  const laps = raceRows("tyre_degradation")
     .filter(d => d.driver_name === selectedDriver && d.lap_time_seconds != null)
     .sort((a, b) => a.lap_number - b.lap_number);
 
@@ -204,7 +252,7 @@ function renderStintTimelines() {
   if (!container || !goldData) return;
 
   container.innerHTML = "";
-  const stints = goldData.pit_strategy;
+  const stints = raceRows("pit_strategy");
   const drivers = [...new Set(stints.map(s => s.driver_name))].slice(0, 10); // top 10
 
   drivers.forEach((driver) => {
@@ -219,7 +267,7 @@ function renderStintTimelines() {
     const track = document.createElement("div");
     track.className = "timeline-track";
 
-    const totalRaceLaps = 57;
+    const totalRaceLaps = Math.max(...driverStints.map((stint) => stint.lap_end || 0), 1);
     driverStints.forEach((stint) => {
       const len = Math.max(stint.stint_length || (stint.lap_end - stint.lap_start + 1), 1);
       const widthPct = (len / totalRaceLaps) * 100;
@@ -244,7 +292,8 @@ function renderWeatherChart() {
   const ctx = document.getElementById("weatherChart");
   if (!ctx || !goldData || !goldData.weather_impact) return;
 
-  const wData = goldData.weather_impact;
+  const wData = raceRows("weather_impact");
+  if (!wData.length) return;
   const labels = wData.map((_, i) => `T+${i * 2}m`);
   const trackTemps = wData.map(d => d.track_temperature);
   const airTemps = wData.map(d => d.air_temperature);

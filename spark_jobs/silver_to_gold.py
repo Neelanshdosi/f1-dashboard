@@ -34,6 +34,8 @@ def get_spark_session(app_name: str = "f1_silver_to_gold") -> SparkSession:
         .master("local[1]")
         .config("spark.driver.host", "127.0.0.1")
         .config("spark.driver.bindAddress", "127.0.0.1")
+        .config("spark.default.parallelism", "1")
+        .config("spark.sql.shuffle.partitions", "1")
         .config("spark.sql.adaptive.enabled", "false")
         .config("spark.sql.parquet.compression.codec", "snappy")
     )

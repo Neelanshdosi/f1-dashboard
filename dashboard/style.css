@@ -108,6 +108,25 @@ header {
   align-items: center;
 }
 
+.race-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.race-picker select {
+  max-width: 240px;
+  padding: 8px 30px 8px 12px;
+  color: #fff;
+  background: #172233;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+}
+
 .badge-pill {
   display: flex;
   align-items: center;
@@ -481,6 +500,17 @@ select:focus, input:focus {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+  .header-badges {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .race-picker {
+    flex: 1;
+  }
+  .race-picker select {
+    flex: 1;
+    min-width: 0;
   }
   .driver-timeline-row {
     flex-direction: column;
