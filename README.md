@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # f1-dashboard
 F1 race analytics pipeline on GCP: PySpark + medallion architecture (bronze/silver/gold) on BigQuery, built from OpenF1 data.
 =======
@@ -204,4 +203,4 @@ duplicate records and inflate costs. The existence check on the blob
 2. All new logic needs a corresponding test in `tests/`.
 3. Never hardcode project IDs, bucket names, or credentials.
 4. Each phase is reviewed and merged before the next begins.
->>>>>>> origin/master
+
