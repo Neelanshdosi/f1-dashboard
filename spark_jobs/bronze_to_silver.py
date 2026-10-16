@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -55,7 +54,7 @@ def get_spark_session(app_name: str = "f1_bronze_to_silver") -> SparkSession:
 
 def transform_dim_sessions(df: DataFrame) -> DataFrame:
     from pyspark.sql import functions as F
-    from pyspark.sql.types import IntegerType, TimestampType
+    from pyspark.sql.types import IntegerType
 
     transformed = (
         df.filter(F.col("is_cancelled") == False)  # noqa: E712
@@ -97,6 +96,22 @@ def transform_dim_drivers(df: DataFrame) -> DataFrame:
     from pyspark.sql import functions as F
     from pyspark.sql.types import IntegerType
 
+    df = _ensure_optional_columns(
+        df,
+        {
+            "meeting_key": (None, "int"),
+            "broadcast_name": ("", "string"),
+            "full_name": ("", "string"),
+            "first_name": ("", "string"),
+            "last_name": ("", "string"),
+            "name_acronym": ("", "string"),
+            "team_name": ("", "string"),
+            "team_colour": ("", "string"),
+            "country_code": ("", "string"),
+            "headshot_url": ("", "string"),
+        },
+    )
+
     transformed = (
         df.withColumn("driver_number", F.col("driver_number").cast(IntegerType()))
         .withColumn("session_key", F.col("session_key").cast(IntegerType()))
@@ -133,6 +148,15 @@ def transform_fct_stints(df: DataFrame) -> DataFrame:
     from pyspark.sql import functions as F
     from pyspark.sql.types import IntegerType
 
+    df = _ensure_optional_columns(
+        df,
+        {
+            "meeting_key": (None, "int"),
+            "compound": ("UNKNOWN", "string"),
+            "tyre_age_at_start": (0, "int"),
+        },
+    )
+
     transformed = (
         df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
         .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
@@ -161,13 +185,28 @@ def transform_fct_laps(df_laps: DataFrame, df_stints: DataFrame | None = None) -
     from pyspark.sql import functions as F
     from pyspark.sql.types import BooleanType, DoubleType, IntegerType
 
+    df_laps = _ensure_optional_columns(
+        df_laps,
+        {
+            "meeting_key": (None, "int"),
+            "date_start": (None, "timestamp"),
+            "duration_sector_1": (None, "double"),
+            "duration_sector_2": (None, "double"),
+            "duration_sector_3": (None, "double"),
+            "i1_speed": (None, "double"),
+            "i2_speed": (None, "double"),
+            "st_speed": (None, "double"),
+            "is_pit_out_lap": (False, "boolean"),
+        },
+    )
+
     cleaned = (
         df_laps.withColumn("session_key", F.col("session_key").cast(IntegerType()))
         .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
         .withColumn("driver_number", F.col("driver_number").cast(IntegerType()))
         .withColumn("lap_number", F.col("lap_number").cast(IntegerType()))
         .withColumn("date_start", F.to_timestamp(F.col("date_start")))
-        .withColumn("lap_duration", F.col("lap_duration").cast(DoubleType()))
+        .withColumn("lap_duration", F.expr("try_cast(lap_duration AS DOUBLE)"))
         .withColumn("lap_time_seconds", F.col("lap_duration").cast(DoubleType()))
         .withColumn("duration_sector_1", F.col("duration_sector_1").cast(DoubleType()))
         .withColumn("duration_sector_2", F.col("duration_sector_2").cast(DoubleType()))
@@ -202,6 +241,16 @@ def transform_fct_pit(df: DataFrame) -> DataFrame:
     from pyspark.sql.types import DoubleType, IntegerType
 
     date_col = "date" if "date" in df.columns else "date_start"
+    df = _ensure_optional_columns(
+        df,
+        {
+            "meeting_key": (None, "int"),
+            "date_start": (None, "timestamp"),
+            "pit_duration": (None, "double"),
+            "stop_duration": (None, "double"),
+            "lane_duration": (None, "double"),
+        },
+    )
     transformed = (
         df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
         .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
@@ -230,6 +279,21 @@ def transform_fct_weather(df: DataFrame) -> DataFrame:
     from pyspark.sql import functions as F
     from pyspark.sql.types import DoubleType, IntegerType
 
+    df = _ensure_optional_columns(
+        df,
+        {
+            "meeting_key": (None, "int"),
+            "date": (None, "timestamp"),
+            "air_temperature": (None, "double"),
+            "track_temperature": (None, "double"),
+            "humidity": (None, "double"),
+            "pressure": (None, "double"),
+            "wind_speed": (None, "double"),
+            "wind_direction": (None, "int"),
+            "rainfall": (None, "int"),
+        },
+    )
+
     transformed = (
         df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
         .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
@@ -256,6 +320,15 @@ def transform_fct_weather(df: DataFrame) -> DataFrame:
         .dropDuplicates(["session_key", "date_utc"])
     )
     return transformed
+
+
+def _ensure_optional_columns(df: DataFrame, defaults: dict[str, tuple[object, str]]) -> DataFrame:
+    from pyspark.sql import functions as F
+
+    for name, (default, data_type) in defaults.items():
+        if name not in df.columns:
+            df = df.withColumn(name, F.lit(default).cast(data_type))
+    return df
 
 
 def transform_fct_car_data(df: DataFrame) -> DataFrame:

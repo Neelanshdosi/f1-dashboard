@@ -2,19 +2,12 @@
 Unit tests for PySpark Silver to Gold aggregations.
 """
 
-import pytest
 from pyspark.sql import SparkSession
 
-from spark_jobs.bronze_to_silver import get_spark_session
 from spark_jobs.silver_to_gold import (
     compute_driver_race_summary,
     compute_tyre_degradation,
 )
-
-
-@pytest.fixture(scope="session")
-def spark() -> SparkSession:
-    return get_spark_session("test_gold_transforms")
 
 
 def test_compute_driver_race_summary(spark: SparkSession):

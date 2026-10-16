@@ -54,11 +54,31 @@ def compute_driver_race_summary(
     df_pit: DataFrame,
 ) -> DataFrame:
     from pyspark.sql import functions as F
-    from pyspark.sql.types import DoubleType, IntegerType
+    from pyspark.sql.types import IntegerType
+
+    df_laps = _ensure_optional_columns(
+        df_laps,
+        {
+            "meeting_key": (None, "int"),
+            "is_pit_out_lap": (False, "boolean"),
+            "lap_time_seconds": (None, "double"),
+        },
+    )
+    df_drivers = _ensure_optional_columns(
+        df_drivers,
+        {
+            "full_name": ("", "string"),
+            "name_acronym": ("", "string"),
+            "team_name": ("", "string"),
+            "team_colour": ("", "string"),
+        },
+    )
+    df_stints = _ensure_optional_columns(df_stints, {"compound": ("UNKNOWN", "string")})
+    df_pit = _ensure_optional_columns(df_pit, {"pit_duration": (None, "double")})
 
     # Lap stats (exclude out laps and extreme anomalies for avg pace)
     valid_laps = df_laps.filter(
-        (F.col("is_pit_out_lap") == False) & (F.col("lap_time_seconds").isNotNull())
+        (~F.col("is_pit_out_lap")) & (F.col("lap_time_seconds").isNotNull())
     )
     lap_stats = valid_laps.groupBy("session_key", "driver_number").agg(
         F.round(F.min("lap_time_seconds"), 3).alias("fastest_lap_seconds"),
@@ -140,9 +160,25 @@ def compute_tyre_degradation(
     from pyspark.sql import Window
     from pyspark.sql import functions as F
 
+    df_laps = _ensure_optional_columns(
+        df_laps,
+        {
+            "is_pit_out_lap": (False, "boolean"),
+            "lap_time_seconds": (None, "double"),
+            "stint_number": (None, "int"),
+            "tyre_compound": (None, "string"),
+            "tyre_life": (None, "int"),
+            "lap_number": (None, "int"),
+        },
+    )
+    df_drivers = _ensure_optional_columns(
+        df_drivers,
+        {"full_name": ("", "string"), "team_name": ("", "string")},
+    )
+
     # Filter clean laps with valid tyre info
     clean_laps = df_laps.filter(
-        (F.col("is_pit_out_lap") == False)
+        (~F.col("is_pit_out_lap"))
         & (F.col("lap_time_seconds").isNotNull())
         & (F.col("tyre_life").isNotNull())
     )
@@ -189,6 +225,19 @@ def compute_pit_strategy(
     df_drivers: DataFrame,
 ) -> DataFrame:
     from pyspark.sql import functions as F
+
+    df_pit = _ensure_optional_columns(
+        df_pit,
+        {"pit_duration": (None, "double"), "stop_duration": (None, "double")},
+    )
+    df_stints = _ensure_optional_columns(
+        df_stints,
+        {"compound": ("UNKNOWN", "string")},
+    )
+    df_drivers = _ensure_optional_columns(
+        df_drivers,
+        {"full_name": ("", "string"), "team_name": ("", "string")},
+    )
 
     stints_ext = df_stints.withColumn(
         "stint_length", F.col("lap_end") - F.col("lap_start") + 1
@@ -246,9 +295,30 @@ def compute_weather_impact(
 ) -> DataFrame:
     from pyspark.sql import functions as F
 
+    df_weather = _ensure_optional_columns(
+        df_weather,
+        {
+            "date_utc": (None, "timestamp"),
+            "air_temperature": (None, "double"),
+            "track_temperature": (None, "double"),
+            "humidity": (None, "double"),
+            "pressure": (None, "double"),
+            "wind_speed": (None, "double"),
+            "wind_direction": (None, "int"),
+            "rainfall": (None, "int"),
+        },
+    )
+    df_laps = _ensure_optional_columns(
+        df_laps,
+        {
+            "is_pit_out_lap": (False, "boolean"),
+            "lap_time_seconds": (None, "double"),
+        },
+    )
+
     # Field average lap time across entire race
     avg_field_time = (
-        df_laps.filter((F.col("is_pit_out_lap") == False) & (F.col("lap_time_seconds").isNotNull()))
+        df_laps.filter((~F.col("is_pit_out_lap")) & (F.col("lap_time_seconds").isNotNull()))
         .groupBy("session_key")
         .agg(F.round(F.avg("lap_time_seconds"), 3).alias("field_avg_lap_time"))
     )
@@ -270,6 +340,15 @@ def compute_weather_impact(
         .dropDuplicates(["session_key", "date_utc"])
     )
     return impact
+
+
+def _ensure_optional_columns(df: DataFrame, defaults: dict[str, tuple[object, str]]) -> DataFrame:
+    from pyspark.sql import functions as F
+
+    for name, (default, data_type) in defaults.items():
+        if name not in df.columns:
+            df = df.withColumn(name, F.lit(default).cast(data_type))
+    return df
 
 
 # ─────────────────────────────────────────────────────────────────────────────

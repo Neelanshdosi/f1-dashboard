@@ -27,6 +27,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
       # ── Install dependencies ──────────────────────────────────
       - name: Install dependencies
         run: |
@@ -36,7 +42,7 @@ jobs:
       # ── Lint with Ruff ────────────────────────────────────────
       - name: Lint (ruff)
         run: |
-          ruff check ingestion/ tests/ --output-format=github
+          ruff check ingestion/ spark_jobs/ scripts/ tests/ --output-format=github
 
       # ── Run unit tests ────────────────────────────────────────
       - name: Run tests with coverage
@@ -49,6 +55,7 @@ jobs:
         run: |
           pytest tests/ \
             --cov=ingestion \
+            --cov=spark_jobs \
             --cov-report=term-missing \
             --cov-report=xml \
             -v
