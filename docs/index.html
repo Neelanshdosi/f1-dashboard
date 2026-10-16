@@ -26,10 +26,13 @@
         <div class="f1-badge">F1</div>
         <div class="brand-text">
           <h1>RACE STRATEGY & TELEMETRY ANALYTICS</h1>
-          <p>2024 Bahrain Grand Prix • GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)</p>
+          <p id="race-subtitle">GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)</p>
         </div>
       </div>
       <div class="header-badges">
+        <label class="race-picker" for="race-select">Race
+          <select id="race-select" aria-label="Select race"></select>
+        </label>
         <div class="badge-pill">
           <span class="badge-dot"></span>
           <span>BigQuery Gold Layer Live</span>
@@ -40,24 +43,24 @@
     <!-- Overview Metric Cards -->
     <section class="metrics-grid">
       <div class="metric-card">
-        <div class="metric-title">Race Winner / P1</div>
-        <div class="metric-value" id="metric-winner">Max VERSTAPPEN</div>
-        <div class="metric-sub">Red Bull Racing • 25 Pts</div>
+        <div class="metric-title">Fastest Lap Leader</div>
+        <div class="metric-value" id="metric-winner">—</div>
+        <div class="metric-sub" id="metric-winner-sub">Fastest lap in selected race</div>
       </div>
       <div class="metric-card">
         <div class="metric-title">Fastest Lap</div>
-        <div class="metric-value" id="metric-fastest-lap">92.608s</div>
-        <div class="metric-sub">Lap 39 • Max VERSTAPPEN</div>
+        <div class="metric-value" id="metric-fastest-lap">—</div>
+        <div class="metric-sub" id="metric-fastest-sub">Selected race</div>
       </div>
       <div class="metric-card">
         <div class="metric-title">Field Pit Stops</div>
-        <div class="metric-value" id="metric-stops">43 Stops</div>
-        <div class="metric-sub">Avg 2.15 stops / driver</div>
+        <div class="metric-value" id="metric-stops">—</div>
+        <div class="metric-sub" id="metric-stops-sub">Selected race</div>
       </div>
       <div class="metric-card">
         <div class="metric-title">Processed Records</div>
-        <div class="metric-value" id="metric-rows">51,415</div>
-        <div class="metric-sub">Telemetry, laps, stints, weather</div>
+        <div class="metric-value" id="metric-rows">—</div>
+        <div class="metric-sub">Gold analytics rows</div>
       </div>
     </section>
 
@@ -76,15 +79,15 @@
         <div class="glass-panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Official Driver Classification & Strategy Overview</div>
-              <div class="panel-desc">Calculated by PySpark Gold Aggregations from 1,130 race laps and 43 pit events.</div>
+              <div class="panel-title">Driver Pace & Strategy Overview</div>
+              <div class="panel-desc" id="leaderboard-desc">Calculated by PySpark Gold Aggregations.</div>
             </div>
           </div>
           <div class="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>Pos</th>
+                  <th>Lap rank</th>
                   <th>Driver</th>
                   <th>Constructor</th>
                   <th>Start Tyre</th>
@@ -127,7 +130,7 @@
         <div class="glass-panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Pit Stop & Tyre Stint Timeline (57 Laps)</div>
+              <div class="panel-title" id="strategy-title">Pit Stop & Tyre Stint Timeline</div>
               <div class="panel-desc">Proportional race tyre strategy by driver (Red = Soft, Yellow = Medium, White = Hard).</div>
             </div>
           </div>
@@ -143,7 +146,7 @@
           <div class="panel-header">
             <div>
               <div class="panel-title">Track & Ambient Weather Conditions</div>
-              <div class="panel-desc">Track cooling and temperature swings during night session at Bahrain International Circuit.</div>
+              <div class="panel-desc" id="weather-desc">Track and ambient weather observations for the selected race.</div>
             </div>
           </div>
           <div style="position: relative; height: 380px; width: 100%;">

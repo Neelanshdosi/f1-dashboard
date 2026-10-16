@@ -12,23 +12,10 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from spark_jobs.bronze_to_silver import (
-    transform_dim_drivers,
-    transform_fct_laps,
-    transform_fct_pit,
-    transform_fct_stints,
-    transform_fct_weather,
+DATA_FILES = (
+    ROOT / "dashboard" / "gold_data.json",
+    ROOT / "docs" / "gold_data.json",
 )
-from spark_jobs.silver_to_gold import (
-    compute_driver_race_summary,
-    compute_pit_strategy,
-    compute_tyre_degradation,
-    compute_weather_impact,
-    get_spark_session,
-)
-
-
-DATA_FILE = ROOT / "dashboard" / "gold_data.json"
 API = "https://api.openf1.org/v1"
 RACE_NAMES = {
     9693: "2025 Australian Grand Prix",
@@ -85,11 +72,32 @@ def add_defaults(rows: list[dict], fields: tuple[str, ...], default="") -> list[
     return normalized
 
 
+def write_dashboard_data(dashboard: dict) -> None:
+    content = json.dumps(dashboard, indent=2, default=str) + "\n"
+    for path in DATA_FILES:
+        path.write_text(content, encoding="utf-8")
+
+
 def main() -> None:
+    from spark_jobs.bronze_to_silver import (
+        transform_dim_drivers,
+        transform_fct_laps,
+        transform_fct_pit,
+        transform_fct_stints,
+        transform_fct_weather,
+    )
+    from spark_jobs.silver_to_gold import (
+        compute_driver_race_summary,
+        compute_pit_strategy,
+        compute_tyre_degradation,
+        compute_weather_impact,
+        get_spark_session,
+    )
+
     spark = get_spark_session("f1_dashboard_refresh")
     spark.sparkContext.setLogLevel("ERROR")
     http = requests.Session()
-    with DATA_FILE.open(encoding="utf-8") as handle:
+    with DATA_FILES[0].open(encoding="utf-8") as handle:
         dashboard = json.load(handle)
 
     # Retain the existing Bahrain 2024 session and replace/add these five real 2025 races.
@@ -156,9 +164,9 @@ def main() -> None:
     dashboard["races"] = sorted(
         existing_sessions.values(), key=lambda race: race.get("date", "")
     )
-    DATA_FILE.write_text(json.dumps(dashboard, indent=2, default=str) + "\n", encoding="utf-8")
+    write_dashboard_data(dashboard)
     spark.stop()
-    print(f"Wrote {len(dashboard['races'])} races to {DATA_FILE}")
+    print(f"Wrote {len(dashboard['races'])} races to {len(DATA_FILES)} dashboard data files")
 
 
 if __name__ == "__main__":
