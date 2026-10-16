@@ -23,21 +23,23 @@ if TYPE_CHECKING:
 
 
 def get_spark_session(app_name: str = "f1_silver_to_gold") -> SparkSession:
-    """Build or retrieve a PySpark SparkSession configured for local execution."""
+    """Build a Spark session, retaining spark-submit settings outside local mode."""
     from pyspark.sql import SparkSession
 
     os.environ["PYSPARK_PYTHON"] = sys.executable
     os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
-    builder = (
-        SparkSession.builder.appName(app_name)
-        .master("local[1]")
-        .config("spark.driver.host", "127.0.0.1")
-        .config("spark.driver.bindAddress", "127.0.0.1")
-        .config("spark.default.parallelism", "1")
-        .config("spark.sql.shuffle.partitions", "1")
-        .config("spark.sql.adaptive.enabled", "false")
-        .config("spark.sql.parquet.compression.codec", "snappy")
+    builder = SparkSession.builder.appName(app_name)
+    if os.getenv("SPARK_LOCAL_MODE") == "1":
+        builder = (
+            builder.master("local[1]")
+            .config("spark.driver.host", "127.0.0.1")
+            .config("spark.driver.bindAddress", "127.0.0.1")
+            .config("spark.default.parallelism", "1")
+            .config("spark.sql.shuffle.partitions", "1")
+        )
+    builder = builder.config("spark.sql.adaptive.enabled", "false").config(
+        "spark.sql.parquet.compression.codec", "snappy"
     )
     return builder.getOrCreate()
 

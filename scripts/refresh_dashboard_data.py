@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -94,6 +95,7 @@ def main() -> None:
         get_spark_session,
     )
 
+    os.environ["SPARK_LOCAL_MODE"] = "1"
     spark = get_spark_session("f1_dashboard_refresh")
     spark.sparkContext.setLogLevel("ERROR")
     http = requests.Session()
