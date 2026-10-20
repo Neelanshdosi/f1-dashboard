@@ -372,9 +372,8 @@ def run_pipeline(session_key: int = 9472, season: int = 2024) -> dict[str, int]:
     bq_client = bigquery.Client(project=project_id)
     bucket = storage_client.bucket(bucket_name)
 
-    # Ensure dataset exists
-    dataset_ref = f"{project_id}.f1_analytics"
-    bq_client.create_dataset(bigquery.Dataset(dataset_ref), exists_ok=True)
+    # Ensure dataset and tables exist
+    ensure_gold_tables(bq_client, project_id)
 
     spark = get_spark_session()
     counts: dict[str, int] = {}
@@ -489,6 +488,115 @@ def run_pipeline(session_key: int = 9472, season: int = 2024) -> dict[str, int]:
     return counts
 
 
+GOLD_TABLE_SCHEMAS = {
+    "agg_driver_race_summary": [
+        ("session_key", "INT64"),
+        ("meeting_key", "INT64"),
+        ("driver_number", "INT64"),
+        ("driver_name", "STRING"),
+        ("name_acronym", "STRING"),
+        ("team_name", "STRING"),
+        ("team_colour", "STRING"),
+        ("total_laps", "INT64"),
+        ("fastest_lap_seconds", "FLOAT64"),
+        ("avg_lap_seconds", "FLOAT64"),
+        ("total_pit_stops", "INT64"),
+        ("total_pit_duration", "FLOAT64"),
+        ("starting_compound", "STRING"),
+        ("max_stint_length", "INT64"),
+    ],
+    "agg_tyre_degradation": [
+        ("session_key", "INT64"),
+        ("driver_number", "INT64"),
+        ("driver_name", "STRING"),
+        ("team_name", "STRING"),
+        ("stint_number", "INT64"),
+        ("compound", "STRING"),
+        ("tyre_age", "INT64"),
+        ("lap_number", "INT64"),
+        ("lap_time_seconds", "FLOAT64"),
+        ("stint_avg_lap_time", "FLOAT64"),
+        ("delta_to_stint_avg", "FLOAT64"),
+    ],
+    "agg_pit_strategy": [
+        ("session_key", "INT64"),
+        ("driver_number", "INT64"),
+        ("driver_name", "STRING"),
+        ("team_name", "STRING"),
+        ("stint_number", "INT64"),
+        ("compound", "STRING"),
+        ("lap_start", "INT64"),
+        ("lap_end", "INT64"),
+        ("stint_length", "INT64"),
+        ("pit_lap", "INT64"),
+        ("pit_duration", "FLOAT64"),
+        ("stop_duration", "FLOAT64"),
+    ],
+    "agg_weather_impact": [
+        ("session_key", "INT64"),
+        ("date_utc", "TIMESTAMP"),
+        ("air_temperature", "FLOAT64"),
+        ("track_temperature", "FLOAT64"),
+        ("humidity", "FLOAT64"),
+        ("pressure", "FLOAT64"),
+        ("wind_speed", "FLOAT64"),
+        ("wind_direction", "INT64"),
+        ("rainfall", "INT64"),
+        ("field_avg_lap_time", "FLOAT64"),
+    ],
+}
+
+
+def _load_bigquery_config() -> dict:
+    import yaml
+
+    config_path = Path(__file__).resolve().parents[1] / "config.yaml"
+    with config_path.open(encoding="utf-8") as config_file:
+        return yaml.safe_load(config_file)["bigquery"]
+
+
+def ensure_gold_tables(bq_client, project_id: str) -> None:
+    """Ensure all Gold tables exist in BigQuery with proper partitioning and clustering."""
+    from google.cloud import bigquery
+
+    dataset_ref = f"{project_id}.f1_analytics"
+    bq_client.create_dataset(bigquery.Dataset(dataset_ref), exists_ok=True)
+
+    settings = _load_bigquery_config()
+    partition = settings["session_key_partition"]
+    gold_tables = settings["gold_tables"]
+
+    for table_name, schema_fields in GOLD_TABLE_SCHEMAS.items():
+        table_ref = f"{dataset_ref}.{table_name}"
+        table = bigquery.Table(table_ref)
+        table.schema = [
+            bigquery.SchemaField(name, field_type) for name, field_type in schema_fields
+        ]
+        table.range_partitioning = bigquery.RangePartitioning(
+            field="session_key",
+            range_=bigquery.PartitionRange(
+                start=partition["start"],
+                end=partition["end"],
+                interval=partition["interval"],
+            ),
+        )
+        clustering_fields = gold_tables.get(table_name, {}).get("clustering_fields")
+        if clustering_fields:
+            table.clustering_fields = clustering_fields
+
+        bq_client.create_table(table, exists_ok=True)
+
+
+def _validate_session_key(rows: list[dict], expected_session_key: int) -> None:
+    """Ensure every row matches the expected session_key before loading."""
+    for idx, row in enumerate(rows):
+        row_session = row.get("session_key")
+        if row_session != expected_session_key:
+            raise ValueError(
+                f"Row {idx} has invalid session_key={row_session}, expected {expected_session_key}"
+            )
+
+
 def _write_and_load_gold(
     bucket,
     bq_client,
@@ -507,6 +615,8 @@ def _write_and_load_gold(
     if count == 0:
         return 0
 
+    _validate_session_key(rows, session_key)
+
     table = pa.Table.from_pylist(rows)
     local_file = temp_path / f"{table_name}.parquet"
     pq.write_table(table, str(local_file), compression="snappy")
@@ -517,49 +627,32 @@ def _write_and_load_gold(
     blob.upload_from_filename(str(local_file))
     print(f"  Uploaded to GCS: gs://{bucket.name}/{gcs_blob_name} ({count:,} rows)")
 
-    # Load directly from GCS into BigQuery
-    table_ref = f"{project_id}.f1_analytics.{table_name}"
+    # Load directly from GCS into BigQuery (partition-scoped destination)
+    partition_table_ref = f"{project_id}.f1_analytics.{table_name}${session_key}"
     gcs_uri = f"gs://{bucket.name}/{gcs_blob_name}"
     load_job = _load_gold_table_from_uri(
-        bq_client, gcs_uri, table_ref, table_name
+        bq_client, gcs_uri, partition_table_ref
     )
     load_job.result()  # Wait for BQ load job to complete
-    print(f"  Loaded into BigQuery: {table_ref} ({count:,} rows)")
+    print(f"  Loaded into BigQuery: {partition_table_ref} ({count:,} rows)")
 
     return count
 
 
-def _build_gold_load_job_config(table_name: str):
-    """Build a BigQuery load config from the canonical settings in config.yaml."""
-    import yaml
+def _build_gold_load_job_config():
+    """Build a BigQuery load config for loading into a partition decorator."""
     from google.cloud import bigquery
 
-    config_path = Path(__file__).resolve().parents[1] / "config.yaml"
-    with config_path.open(encoding="utf-8") as config_file:
-        settings = yaml.safe_load(config_file)["bigquery"]
-
-    partition = settings["session_key_partition"]
-    table_settings = settings["gold_tables"][table_name]
     return bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.PARQUET,
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-        autodetect=True,
-        range_partitioning=bigquery.RangePartitioning(
-            field="session_key",
-            range_=bigquery.PartitionRange(
-                start=partition["start"],
-                end=partition["end"],
-                interval=partition["interval"],
-            ),
-        ),
-        clustering_fields=table_settings["clustering_fields"],
     )
 
 
-def _load_gold_table_from_uri(bq_client, gcs_uri: str, table_ref: str, table_name: str):
-    """Submit a Gold Parquet load with the table's configured layout."""
-    job_config = _build_gold_load_job_config(table_name)
-    return bq_client.load_table_from_uri(gcs_uri, table_ref, job_config=job_config)
+def _load_gold_table_from_uri(bq_client, gcs_uri: str, partition_table_ref: str):
+    """Submit a Gold Parquet load to a partitioned table destination."""
+    job_config = _build_gold_load_job_config()
+    return bq_client.load_table_from_uri(gcs_uri, partition_table_ref, job_config=job_config)
 
 
 if __name__ == "__main__":
