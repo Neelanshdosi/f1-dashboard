@@ -172,6 +172,36 @@ def test_validate_and_split_fct_weather(spark: SparkSession):
     assert "air_temp_out_of_range" in reasons
 
 
+def test_validate_and_split_fct_session_result_and_grid(spark: SparkSession):
+    """Test session_result and starting_grid validation: null position is valid, null driver/session quarantined."""
+    res_records = [
+        {"session_key": 9472, "driver_number": 1, "position": 1},
+        {"session_key": 9472, "driver_number": 2, "position": None},  # DNF/DNS: valid!
+        {"session_key": 9472, "driver_number": None, "position": 3},  # Invalid: null driver
+        {"session_key": None, "driver_number": 4, "position": 4},     # Invalid: null session
+    ]
+    df_res = spark.createDataFrame(res_records)
+    valid_res, rej_res = validate_and_split_records(df_res, "fct_session_result", 9472)
+    assert valid_res.count() == 2
+    assert rej_res is not None
+    assert rej_res.count() == 2
+    res_reasons = {r["reject_reason"] for r in rej_res.collect()}
+    assert "null_driver_number" in res_reasons
+    assert "null_session_key" in res_reasons
+
+    grid_records = [
+        {"session_key": 9472, "driver_number": 1, "position": 1, "lap_duration": 85.0},
+        {"session_key": 9472, "driver_number": 2, "position": None, "lap_duration": None},  # Valid pit-lane starter
+        {"session_key": 9472, "driver_number": None, "position": 3, "lap_duration": 86.0},  # Invalid: null driver
+    ]
+    df_grid = spark.createDataFrame(grid_records)
+    valid_grid, rej_grid = validate_and_split_records(df_grid, "fct_starting_grid", 9472)
+    assert valid_grid.count() == 2
+    assert rej_grid is not None
+    assert rej_grid.count() == 1
+    assert rej_grid.first()["reject_reason"] == "null_driver_number"
+
+
 def test_record_audit_log_local(tmp_path):
     """Test local audit logging writes JSON-lines file correctly."""
     base_uri = f"file://{tmp_path.as_posix()}"

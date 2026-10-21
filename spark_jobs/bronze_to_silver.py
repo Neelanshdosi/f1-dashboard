@@ -374,6 +374,124 @@ def transform_fct_car_data(df: DataFrame) -> DataFrame:
     return transformed
 
 
+def transform_fct_session_result(df: DataFrame) -> DataFrame:
+    from pyspark.sql import functions as F
+    from pyspark.sql.types import (
+        BooleanType,
+        DoubleType,
+        IntegerType,
+        StringType,
+    )
+
+    df = _ensure_optional_columns(
+        df,
+        {
+            "session_key": (None, "int"),
+            "meeting_key": (None, "int"),
+            "driver_number": (None, "int"),
+            "position": (None, "int"),
+            "number_of_laps": (None, "int"),
+            "points": (None, "double"),
+            "dnf": (False, "boolean"),
+            "dns": (False, "boolean"),
+            "dsq": (False, "boolean"),
+            "duration": (None, "string"),
+            "gap_to_leader": (None, "string"),
+        },
+    )
+
+    # Cast duration_seconds: double if scalar numeric string, null if array or null or non-numeric
+    is_dur_array = F.col("duration").startswith("[")
+    is_dur_numeric = F.col("duration").rlike(r"^[+-]?\d+(\.\d+)?$")
+    duration_seconds = (
+        F.when(F.col("duration").isNull() | is_dur_array | (~is_dur_numeric), F.lit(None).cast(DoubleType()))
+        .otherwise(F.col("duration").cast(DoubleType()))
+    )
+
+    # Raw gap string
+    gap_to_leader_raw = F.col("gap_to_leader").cast(StringType())
+
+    # gap_to_leader_seconds: numeric gap when parseable, leader=0.0
+    is_gap_numeric = F.col("gap_to_leader").rlike(r"^[+-]?\d+(\.\d+)?$")
+    gap_to_leader_seconds = (
+        F.when(is_gap_numeric, F.col("gap_to_leader").cast(DoubleType()))
+        .otherwise(F.lit(None).cast(DoubleType()))
+    )
+
+    # laps_down: parsed from "+1 LAP", "+2 LAPS", etc.
+    extracted_laps = F.regexp_extract(F.col("gap_to_leader"), r"^\+(\d+)\s+LAP", 1)
+    laps_down = (
+        F.when(extracted_laps != "", extracted_laps.cast(IntegerType()))
+        .otherwise(F.lit(None).cast(IntegerType()))
+    )
+
+    transformed = (
+        df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
+        .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
+        .withColumn("driver_number", F.col("driver_number").cast(IntegerType()))
+        .withColumn("position", F.col("position").cast(IntegerType()))
+        .withColumn("number_of_laps", F.col("number_of_laps").cast(IntegerType()))
+        .withColumn("points", F.col("points").cast(DoubleType()))
+        .withColumn("dnf", F.coalesce(F.col("dnf").cast(BooleanType()), F.lit(False)))
+        .withColumn("dns", F.coalesce(F.col("dns").cast(BooleanType()), F.lit(False)))
+        .withColumn("dsq", F.coalesce(F.col("dsq").cast(BooleanType()), F.lit(False)))
+        .withColumn("duration_seconds", duration_seconds)
+        .withColumn("gap_to_leader_raw", gap_to_leader_raw)
+        .withColumn("gap_to_leader_seconds", gap_to_leader_seconds)
+        .withColumn("laps_down", laps_down)
+        .select(
+            "session_key",
+            "meeting_key",
+            "driver_number",
+            "position",
+            "number_of_laps",
+            "points",
+            "dnf",
+            "dns",
+            "dsq",
+            "duration_seconds",
+            "gap_to_leader_raw",
+            "gap_to_leader_seconds",
+            "laps_down",
+        )
+        .dropDuplicates(["session_key", "driver_number"])
+    )
+    return transformed
+
+
+def transform_fct_starting_grid(df: DataFrame) -> DataFrame:
+    from pyspark.sql import functions as F
+    from pyspark.sql.types import DoubleType, IntegerType
+
+    df = _ensure_optional_columns(
+        df,
+        {
+            "session_key": (None, "int"),
+            "meeting_key": (None, "int"),
+            "driver_number": (None, "int"),
+            "position": (None, "int"),
+            "lap_duration": (None, "double"),
+        },
+    )
+
+    transformed = (
+        df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
+        .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
+        .withColumn("driver_number", F.col("driver_number").cast(IntegerType()))
+        .withColumn("position", F.col("position").cast(IntegerType()))
+        .withColumn("lap_duration", F.col("lap_duration").cast(DoubleType()))
+        .select(
+            "session_key",
+            "meeting_key",
+            "driver_number",
+            "position",
+            "lap_duration",
+        )
+        .dropDuplicates(["session_key", "driver_number"])
+    )
+    return transformed
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pipeline Runner
 # ─────────────────────────────────────────────────────────────────────────────
@@ -500,6 +618,12 @@ def validate_and_split_records(
             F.when(F.col("session_key").isNull(), F.lit("null_session_key"))
             .when(F.col("driver_number").isNull(), F.lit("null_driver_number"))
             .when(F.col("date_utc").isNull(), F.lit("invalid_timestamp"))
+        )
+
+    elif table_name in ("fct_session_result", "fct_starting_grid"):
+        reject_reason_col = (
+            F.when(F.col("session_key").isNull(), F.lit("null_session_key"))
+            .when(F.col("driver_number").isNull(), F.lit("null_driver_number"))
         )
 
     if reject_reason_col is None:
@@ -672,8 +796,54 @@ def run_pipeline(
     audit_rows: list[dict] = []
     quality_cfg = _load_quality_config()
 
-    endpoints = ["sessions", "drivers", "stints", "laps", "pit", "weather", "car_data"]
+    endpoints = [
+        "sessions",
+        "drivers",
+        "stints",
+        "laps",
+        "pit",
+        "weather",
+        "car_data",
+        "session_result",
+        "starting_grid",
+    ]
     raw_dfs: dict[str, DataFrame] = {}
+
+    from pyspark.sql.types import (
+        BooleanType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+    )
+
+    explicit_schemas = {
+        "session_result": StructType(
+            [
+                StructField("session_key", IntegerType(), True),
+                StructField("meeting_key", IntegerType(), True),
+                StructField("driver_number", IntegerType(), True),
+                StructField("position", IntegerType(), True),
+                StructField("number_of_laps", IntegerType(), True),
+                StructField("points", DoubleType(), True),
+                StructField("dnf", BooleanType(), True),
+                StructField("dns", BooleanType(), True),
+                StructField("dsq", BooleanType(), True),
+                StructField("duration", StringType(), True),
+                StructField("gap_to_leader", StringType(), True),
+            ]
+        ),
+        "starting_grid": StructType(
+            [
+                StructField("session_key", IntegerType(), True),
+                StructField("meeting_key", IntegerType(), True),
+                StructField("driver_number", IntegerType(), True),
+                StructField("position", IntegerType(), True),
+                StructField("lap_duration", DoubleType(), True),
+            ]
+        ),
+    }
 
     print(f"\n--- Reading Bronze files for session={session_key} ---")
     for ep in endpoints:
@@ -684,20 +854,63 @@ def run_pipeline(
             path_pattern = f"{base}/bronze/{ep}/season={season}/session_key={session_key}/*.json"
 
         try:
+            reader = spark.read
+            if ep in explicit_schemas:
+                reader = reader.schema(explicit_schemas[ep]).option("multiline", "true")
+
             if is_local:
                 local_root = Path(url2pathname(urlparse(base).path))
                 if ep == "sessions":
-                    matched_files = list((local_root / "bronze" / "sessions" / f"season={season}").glob("*/*.json"))
+                    target_dir = local_root / "bronze" / "sessions" / f"season={season}"
+                    matched_files = list(target_dir.glob("*/*.json")) if target_dir.exists() else []
                 else:
-                    matched_files = list((local_root / "bronze" / ep / f"season={season}" / f"session_key={session_key}").glob("*.json"))
+                    target_dir = local_root / "bronze" / ep / f"season={season}" / f"session_key={session_key}"
+                    matched_files = list(target_dir.glob("*.json")) if target_dir.exists() else []
 
                 if not matched_files:
                     print(f"  [WARN] No records found for {ep} at {path_pattern}")
+                    if ep in ("session_result", "starting_grid"):
+                        audit_rows.append(
+                            build_audit_row(
+                                job_name="bronze_to_silver",
+                                session_key=session_key,
+                                season=season,
+                                table_name=f"fct_{ep}",
+                                rows_in=0,
+                                rows_out=0,
+                                rows_rejected=0,
+                                started_at=started_at,
+                                duration_seconds=0.0,
+                                status="SUCCESS",
+                            )
+                        )
                     continue
                 file_paths = [str(p) for p in matched_files]
-                df_raw = spark.read.json(file_paths)
+                df_raw = reader.json(file_paths)
             else:
-                df_raw = spark.read.json(path_pattern)
+                # In GCS / remote mode, catch AnalysisException if path does not exist
+                from pyspark.errors.exceptions.captured import AnalysisException
+
+                try:
+                    df_raw = reader.json(path_pattern)
+                except AnalysisException as ae:
+                    print(f"  [WARN] Path not found for {ep} at {path_pattern}: {ae}")
+                    if ep in ("session_result", "starting_grid"):
+                        audit_rows.append(
+                            build_audit_row(
+                                job_name="bronze_to_silver",
+                                session_key=session_key,
+                                season=season,
+                                table_name=f"fct_{ep}",
+                                rows_in=0,
+                                rows_out=0,
+                                rows_rejected=0,
+                                started_at=started_at,
+                                duration_seconds=0.0,
+                                status="SUCCESS",
+                            )
+                        )
+                    continue
 
             # If sessions, filter to the requested session_key
             if ep == "sessions" and "session_key" in df_raw.columns:
@@ -705,12 +918,42 @@ def run_pipeline(
 
             if df_raw.rdd.isEmpty():
                 print(f"  [WARN] Empty dataframe for {ep} at {path_pattern}")
+                if ep in ("session_result", "starting_grid"):
+                    audit_rows.append(
+                        build_audit_row(
+                            job_name="bronze_to_silver",
+                            session_key=session_key,
+                            season=season,
+                            table_name=f"fct_{ep}",
+                            rows_in=0,
+                            rows_out=0,
+                            rows_rejected=0,
+                            started_at=started_at,
+                            duration_seconds=0.0,
+                            status="SUCCESS",
+                        )
+                    )
                 continue
 
             raw_dfs[ep] = df_raw
             print(f"  Loaded {ep} from {path_pattern}")
         except Exception as e:
             print(f"  [WARN] Could not read {ep} at {path_pattern}: {e}")
+            if ep in ("session_result", "starting_grid"):
+                audit_rows.append(
+                    build_audit_row(
+                        job_name="bronze_to_silver",
+                        session_key=session_key,
+                        season=season,
+                        table_name=f"fct_{ep}",
+                        rows_in=0,
+                        rows_out=0,
+                        rows_rejected=0,
+                        started_at=started_at,
+                        duration_seconds=0.0,
+                        status="SUCCESS",
+                    )
+                )
             continue
 
     print("\n--- Applying PySpark Silver Transformations & Quality Quarantine ---")
@@ -797,6 +1040,22 @@ def run_pipeline(
         c_raw = raw_dfs["car_data"]
         silver_car_data = transform_fct_car_data(c_raw)
         counts["fct_car_data"] = _process_and_save_silver(silver_car_data, "fct_car_data", c_raw.count())
+
+    # 8. fct_session_result
+    if "session_result" in raw_dfs:
+        sr_raw = raw_dfs["session_result"]
+        silver_session_result = transform_fct_session_result(sr_raw)
+        counts["fct_session_result"] = _process_and_save_silver(
+            silver_session_result, "fct_session_result", sr_raw.count()
+        )
+
+    # 9. fct_starting_grid
+    if "starting_grid" in raw_dfs:
+        sg_raw = raw_dfs["starting_grid"]
+        silver_starting_grid = transform_fct_starting_grid(sg_raw)
+        counts["fct_starting_grid"] = _process_and_save_silver(
+            silver_starting_grid, "fct_starting_grid", sg_raw.count()
+        )
 
     # Record run audit
     _record_audit_log(
