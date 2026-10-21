@@ -68,11 +68,11 @@ The ingestion config requests these OpenF1 endpoints and stores each endpoint un
 | `fct_weather` | Timestamped air/track temperature, humidity, pressure, wind, and rainfall fields |
 | `fct_car_data` | Timestamped RPM, speed, gear, throttle, brake, and DRS fields |
 
-Silver files are written below `gs://<bucket>/silver/<table>/season=<year>/session_key=<key>/`.
+Silver files are written below `gs://<bucket>/silver/<table>/season=<year>/session_key=<key>/`. Malformed or out-of-bounds records failing quality rules are routed to `gs://<bucket>/silver/rejected_records/season=<year>/session_key=<key>/`.
 
 ### Gold — BigQuery `f1_analytics`
 
-The DDL range partitions each table on `session_key` using `RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))`. Clustering fields are listed per table.
+Aggregated tables are range partitioned on `session_key` using `RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))`. Clustering fields are listed per table. `dim_sessions` is stored unpartitioned for global session reference, and `pipeline_run_audit` tracks ingestion and transformation execution metrics.
 
 | Table | Columns | Clustered by |
 |---|---|---|
@@ -81,6 +81,8 @@ The DDL range partitions each table on `session_key` using `RANGE_BUCKET(session
 | `agg_pit_strategy` | `session_key`, `driver_number`, `driver_name`, `team_name`, `stint_number`, `compound`, `lap_start`, `lap_end`, `stint_length`, `pit_lap`, `pit_duration`, `stop_duration` | `driver_number`, `compound` |
 | `agg_weather_impact` | `session_key`, `date_utc`, `air_temperature`, `track_temperature`, `humidity`, `pressure`, `wind_speed`, `wind_direction`, `rainfall`, `field_avg_lap_time` | `session_key` |
 | `agg_driver_telemetry` | `session_key`, `meeting_key`, `driver_number`, `driver_name`, `team_name`, `team_colour`, `max_speed`, `avg_speed`, `avg_throttle`, `full_throttle_pct`, `brake_pct`, `drs_open_pct` | `driver_number` |
+| `dim_sessions` | `session_key`, `meeting_key`, `session_name`, `date_start`, `circuit_key`, `country_name`, `year` | *(Unpartitioned dimension)* |
+| `pipeline_run_audit` | `job_name`, `session_key`, `season`, `table_name`, `rows_in`, `rows_out`, `rows_rejected`, `started_at`, `duration_seconds`, `status` | *(Run audit log)* |
 
 ## Data quality
 
@@ -250,7 +252,7 @@ ruff check .
 pytest tests/ -v
 ```
 
-The current suite contains 40 tests.
+The current suite contains 55 tests.
 
 ## Repository structure
 
@@ -264,7 +266,7 @@ f1-dashboard/
 ├── scripts/                    # dashboard refresh, stats, BigQuery benchmark
 ├── spark_jobs/                 # Bronze-to-Silver and Silver-to-Gold jobs
 ├── sql/                        # BigQuery DDL and benchmark queries
-├── tests/                      # ingestion, Spark, layout, benchmark tests
+├── tests/                      # ingestion, Spark, layout, benchmark, DQ, and refresh tests
 ├── config.yaml
 ├── requirements.txt
 └── vercel.json
