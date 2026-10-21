@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -28,6 +27,13 @@ def get_spark_session(app_name: str = "f1_silver_to_gold") -> SparkSession:
 
     os.environ["PYSPARK_PYTHON"] = sys.executable
     os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
+    # On Windows, if HADOOP_HOME is not set but temp/hadoop exists, configure it
+    if sys.platform.startswith("win") and not os.environ.get("HADOOP_HOME"):
+        temp_hadoop = Path(os.environ.get("TEMP", "C:/Temp")) / "hadoop"
+        if (temp_hadoop / "bin" / "winutils.exe").exists():
+            os.environ["HADOOP_HOME"] = str(temp_hadoop)
+            os.environ["PATH"] = str(temp_hadoop / "bin") + os.pathsep + os.environ.get("PATH", "")
 
     builder = SparkSession.builder.appName(app_name)
     if os.getenv("SPARK_LOCAL_MODE") == "1":
@@ -358,119 +364,118 @@ def _ensure_optional_columns(df: DataFrame, defaults: dict[str, tuple[object, st
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def run_pipeline(session_key: int = 9472, season: int = 2024) -> dict[str, int]:
-    from google.cloud import bigquery, storage
-
+def _resolve_base_uri(base_uri: str | None = None) -> str:
+    """Resolve the base URI from CLI arg, environment, or default."""
+    if base_uri:
+        return base_uri.rstrip("/")
     load_dotenv()
     bucket_name = os.getenv("GCS_BUCKET")
+    if bucket_name:
+        return f"gs://{bucket_name.strip('/')}"
+    raise ValueError("base_uri was not provided and GCS_BUCKET environment variable is not set")
+
+
+def run_pipeline(
+    session_key: int = 9472,
+    season: int = 2024,
+    base_uri: str | None = None,
+) -> dict[str, int]:
+    base = _resolve_base_uri(base_uri)
+    is_local = base.startswith("file://")
+    print(f"Running Silver to Gold pipeline with base URI: {base} (session={session_key}, season={season})")
+
     project_id = os.getenv("GCP_PROJECT_ID")
-    if not bucket_name or not project_id:
-        raise ValueError("GCS_BUCKET and GCP_PROJECT_ID must be set in environment")
+    bq_client = None
 
-    print(f"Connecting to GCS bucket: {bucket_name} and BigQuery project: {project_id}...")
-    storage_client = storage.Client()
-    bq_client = bigquery.Client(project=project_id)
-    bucket = storage_client.bucket(bucket_name)
+    if not is_local:
+        from google.cloud import bigquery
 
-    # Ensure dataset and tables exist
-    ensure_gold_tables(bq_client, project_id)
+        if not project_id:
+            raise ValueError("GCP_PROJECT_ID must be set in environment when writing to BigQuery")
+
+        print(f"Connecting to BigQuery project: {project_id}...")
+        bq_client = bigquery.Client(project=project_id)
+        # Ensure dataset and tables exist
+        ensure_gold_tables(bq_client, project_id)
 
     spark = get_spark_session()
     counts: dict[str, int] = {}
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-        silver_cache = temp_path / "silver"
-        gold_out = temp_path / "gold"
-        silver_cache.mkdir()
-        gold_out.mkdir()
+    # Step 1: Read Silver Parquet tables with Spark
+    print(f"\n--- Reading Silver Parquet files for session={session_key} ---")
+    tables = ["dim_drivers", "dim_sessions", "fct_laps", "fct_stints", "fct_pit", "fct_weather"]
+    silver_dfs: dict[str, DataFrame] = {}
 
-        # Step 1: Download Silver Parquet files
-        print(f"\n--- Downloading Silver Parquet files for session={session_key} ---")
-        tables = ["dim_drivers", "dim_sessions", "fct_laps", "fct_stints", "fct_pit", "fct_weather"]
-        silver_dfs: dict[str, DataFrame] = {}
-
-        for tbl in tables:
-            prefix = f"silver/{tbl}/season={season}/session_key={session_key}/"
-            blobs = list(bucket.list_blobs(prefix=prefix))
-            parquet_blobs = [b for b in blobs if b.name.endswith(".parquet")]
-            if not parquet_blobs:
-                print(f"  [WARN] No parquet files found for {tbl} under {prefix}")
+    for tbl in tables:
+        path_pattern = f"{base}/silver/{tbl}/season={season}/session_key={session_key}"
+        try:
+            df_silver = spark.read.parquet(path_pattern)
+            if df_silver.rdd.isEmpty():
+                print(f"  [WARN] No parquet files found for {tbl} under {path_pattern}")
                 continue
+            silver_dfs[tbl] = df_silver
+            print(f"  Loaded Silver {tbl} from {path_pattern}")
+        except Exception as e:
+            print(f"  [WARN] Could not read Silver {tbl} at {path_pattern}: {e}")
+            continue
 
-            local_file = silver_cache / f"{tbl}.parquet"
-            parquet_blobs[0].download_to_filename(str(local_file))
-            print(f"  Downloaded {tbl}: {parquet_blobs[0].name} ({local_file.stat().st_size / 1024:.1f} KB)")
-            silver_dfs[tbl] = spark.read.parquet(str(local_file))
+    print("\n--- Computing Gold Race Strategy Aggregations ---")
 
-        print("\n--- Computing Gold Race Strategy Aggregations ---")
+    # Helper function to write Gold table and load to BigQuery
+    def _process_gold_table(df: DataFrame, table_name: str) -> int:
+        return _write_and_load_gold(
+            bq_client=bq_client,
+            df=df,
+            table_name=table_name,
+            season=season,
+            session_key=session_key,
+            base_uri=base,
+            project_id=project_id,
+            is_local=is_local,
+        )
 
-        # 1. agg_driver_race_summary
+    # 1. agg_driver_race_summary
+    if all(k in silver_dfs for k in ["fct_laps", "dim_drivers", "fct_stints", "fct_pit"]):
         summary_df = compute_driver_race_summary(
             silver_dfs["fct_laps"],
             silver_dfs["dim_drivers"],
             silver_dfs["fct_stints"],
             silver_dfs["fct_pit"],
         )
-        counts["agg_driver_race_summary"] = _write_and_load_gold(
-            bucket=bucket,
-            bq_client=bq_client,
-            df=summary_df,
-            table_name="agg_driver_race_summary",
-            season=season,
-            session_key=session_key,
-            temp_path=gold_out,
-            project_id=project_id,
+        counts["agg_driver_race_summary"] = _process_gold_table(
+            summary_df, "agg_driver_race_summary"
         )
 
-        # 2. agg_tyre_degradation
+    # 2. agg_tyre_degradation
+    if all(k in silver_dfs for k in ["fct_laps", "dim_drivers", "fct_stints"]):
         deg_df = compute_tyre_degradation(
             silver_dfs["fct_laps"],
             silver_dfs["dim_drivers"],
             silver_dfs["fct_stints"],
         )
-        counts["agg_tyre_degradation"] = _write_and_load_gold(
-            bucket=bucket,
-            bq_client=bq_client,
-            df=deg_df,
-            table_name="agg_tyre_degradation",
-            season=season,
-            session_key=session_key,
-            temp_path=gold_out,
-            project_id=project_id,
+        counts["agg_tyre_degradation"] = _process_gold_table(
+            deg_df, "agg_tyre_degradation"
         )
 
-        # 3. agg_pit_strategy
+    # 3. agg_pit_strategy
+    if all(k in silver_dfs for k in ["fct_stints", "fct_pit", "dim_drivers"]):
         pit_strat_df = compute_pit_strategy(
             silver_dfs["fct_stints"],
             silver_dfs["fct_pit"],
             silver_dfs["dim_drivers"],
         )
-        counts["agg_pit_strategy"] = _write_and_load_gold(
-            bucket=bucket,
-            bq_client=bq_client,
-            df=pit_strat_df,
-            table_name="agg_pit_strategy",
-            season=season,
-            session_key=session_key,
-            temp_path=gold_out,
-            project_id=project_id,
+        counts["agg_pit_strategy"] = _process_gold_table(
+            pit_strat_df, "agg_pit_strategy"
         )
 
-        # 4. agg_weather_impact
+    # 4. agg_weather_impact
+    if all(k in silver_dfs for k in ["fct_weather", "fct_laps"]):
         weather_df = compute_weather_impact(
             silver_dfs["fct_weather"],
             silver_dfs["fct_laps"],
         )
-        counts["agg_weather_impact"] = _write_and_load_gold(
-            bucket=bucket,
-            bq_client=bq_client,
-            df=weather_df,
-            table_name="agg_weather_impact",
-            season=season,
-            session_key=session_key,
-            temp_path=gold_out,
-            project_id=project_id,
+        counts["agg_weather_impact"] = _process_gold_table(
+            weather_df, "agg_weather_impact"
         )
 
     print("\n" + "=" * 52)
@@ -587,51 +592,50 @@ def ensure_gold_tables(bq_client, project_id: str) -> None:
         bq_client.create_table(table, exists_ok=True)
 
 
-def _validate_session_key(rows: list[dict], expected_session_key: int) -> None:
+def _validate_session_key(df: DataFrame, expected_session_key: int) -> None:
     """Ensure every row matches the expected session_key before loading."""
-    for idx, row in enumerate(rows):
-        row_session = row.get("session_key")
-        if row_session != expected_session_key:
-            raise ValueError(
-                f"Row {idx} has invalid session_key={row_session}, expected {expected_session_key}"
-            )
+    from pyspark.sql import functions as F
+
+    mismatched = df.filter(
+        (F.col("session_key").isNull()) | (F.col("session_key") != expected_session_key)
+    ).count()
+    if mismatched > 0:
+        raise ValueError(
+            f"Found {mismatched} row(s) with invalid session_key, expected {expected_session_key}"
+        )
 
 
 def _write_and_load_gold(
-    bucket,
     bq_client,
     df: DataFrame,
     table_name: str,
     season: int,
     session_key: int,
-    temp_path: Path,
-    project_id: str,
+    base_uri: str,
+    project_id: str | None = None,
+    is_local: bool = False,
 ) -> int:
-    import pyarrow as pa
-    import pyarrow.parquet as pq
-
-    rows = [r.asDict(recursive=True) for r in df.collect()]
-    count = len(rows)
+    df_cached = df.cache()
+    count = df_cached.count()
     if count == 0:
         return 0
 
-    _validate_session_key(rows, session_key)
+    _validate_session_key(df_cached, session_key)
 
-    table = pa.Table.from_pylist(rows)
-    local_file = temp_path / f"{table_name}.parquet"
-    pq.write_table(table, str(local_file), compression="snappy")
+    # Write Gold Parquet using Spark directly
+    gold_path = f"{base_uri}/gold/{table_name}/season={season}/session_key={session_key}"
+    df_cached.write.mode("overwrite").parquet(gold_path)
+    print(f"  Wrote Gold to: {gold_path} ({count:,} rows)")
 
-    # Upload Gold Parquet to GCS
-    gcs_blob_name = f"gold/{table_name}/season={season}/session_key={session_key}/{table_name}.parquet"
-    blob = bucket.blob(gcs_blob_name)
-    blob.upload_from_filename(str(local_file))
-    print(f"  Uploaded to GCS: gs://{bucket.name}/{gcs_blob_name} ({count:,} rows)")
+    if is_local:
+        print(f"  [LOCAL MODE] Skipping BigQuery load for {table_name}${session_key} ({count:,} rows)")
+        return count
 
     # Load directly from GCS into BigQuery (partition-scoped destination)
     partition_table_ref = f"{project_id}.f1_analytics.{table_name}${session_key}"
-    gcs_uri = f"gs://{bucket.name}/{gcs_blob_name}"
+    load_uri = f"{gold_path}/*.parquet"
     load_job = _load_gold_table_from_uri(
-        bq_client, gcs_uri, partition_table_ref
+        bq_client, load_uri, partition_table_ref
     )
     load_job.result()  # Wait for BQ load job to complete
     print(f"  Loaded into BigQuery: {partition_table_ref} ({count:,} rows)")
@@ -649,16 +653,17 @@ def _build_gold_load_job_config():
     )
 
 
-def _load_gold_table_from_uri(bq_client, gcs_uri: str, partition_table_ref: str):
+def _load_gold_table_from_uri(bq_client, uri: str, partition_table_ref: str):
     """Submit a Gold Parquet load to a partitioned table destination."""
     job_config = _build_gold_load_job_config()
-    return bq_client.load_table_from_uri(gcs_uri, partition_table_ref, job_config=job_config)
+    return bq_client.load_table_from_uri(uri, partition_table_ref, job_config=job_config)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="F1 Silver to Gold PySpark & BigQuery Job")
     parser.add_argument("--session-key", type=int, default=9472)
     parser.add_argument("--season", type=int, default=2024)
+    parser.add_argument("--base-uri", type=str, default=None, help="Base URI (e.g. gs://bucket or file:///path)")
     args = parser.parse_args()
 
-    run_pipeline(session_key=args.session_key, season=args.season)
+    run_pipeline(session_key=args.session_key, season=args.season, base_uri=args.base_uri)

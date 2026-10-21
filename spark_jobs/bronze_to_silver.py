@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -35,6 +34,13 @@ def get_spark_session(app_name: str = "f1_bronze_to_silver") -> SparkSession:
 
     os.environ["PYSPARK_PYTHON"] = sys.executable
     os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
+    # On Windows, if HADOOP_HOME is not set but temp/hadoop exists, configure it
+    if sys.platform.startswith("win") and not os.environ.get("HADOOP_HOME"):
+        temp_hadoop = Path(os.environ.get("TEMP", "C:/Temp")) / "hadoop"
+        if (temp_hadoop / "bin" / "winutils.exe").exists():
+            os.environ["HADOOP_HOME"] = str(temp_hadoop)
+            os.environ["PATH"] = str(temp_hadoop / "bin") + os.pathsep + os.environ.get("PATH", "")
 
     builder = SparkSession.builder.appName(app_name)
     if os.getenv("SPARK_LOCAL_MODE") == "1":
@@ -372,102 +378,124 @@ def transform_fct_car_data(df: DataFrame) -> DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def run_pipeline(session_key: int = 9472, season: int = 2024) -> dict[str, int]:
-    """Execute the bronze-to-silver transformation pipeline."""
-    from google.cloud import storage
-
+def _resolve_base_uri(base_uri: str | None = None) -> str:
+    """Resolve the base URI from CLI arg, environment, or default."""
+    if base_uri:
+        return base_uri.rstrip("/")
     load_dotenv()
     bucket_name = os.getenv("GCS_BUCKET")
-    if not bucket_name:
-        raise ValueError("GCS_BUCKET environment variable not set")
+    if bucket_name:
+        return f"gs://{bucket_name.strip('/')}"
+    raise ValueError("base_uri was not provided and GCS_BUCKET environment variable is not set")
 
-    print(f"Connecting to GCS bucket: {bucket_name}...")
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
+
+def run_pipeline(
+    session_key: int = 9472,
+    season: int = 2024,
+    base_uri: str | None = None,
+) -> dict[str, int]:
+    """Execute the bronze-to-silver transformation pipeline using Spark I/O."""
+    base = _resolve_base_uri(base_uri)
+    print(f"Running Bronze to Silver pipeline with base URI: {base} (session={session_key}, season={season})")
 
     spark = get_spark_session()
     counts: dict[str, int] = {}
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-        bronze_cache = temp_path / "bronze"
-        silver_out = temp_path / "silver"
-        bronze_cache.mkdir()
-        silver_out.mkdir()
+    endpoints = ["sessions", "drivers", "stints", "laps", "pit", "weather", "car_data"]
+    raw_dfs: dict[str, DataFrame] = {}
 
-        # Step 1: Download Bronze JSON files for the session
-        print(f"\n--- Downloading Bronze files for session={session_key} ---")
-        endpoints = ["sessions", "drivers", "stints", "laps", "pit", "weather", "car_data"]
-        raw_dfs: dict[str, DataFrame] = {}
+    from pathlib import Path
+    from urllib.parse import urlparse
+    from urllib.request import url2pathname
 
-        for ep in endpoints:
-            prefix = f"bronze/{ep}/"
-            blobs = list(bucket.list_blobs(prefix=prefix))
-            # match session key or all sessions
-            target_blobs = [
-                b for b in blobs
-                if f"session_key={session_key}" in b.name or (ep == "sessions" and f"season={season}" in b.name)
-            ]
-            if not target_blobs:
-                print(f"  [WARN] No blobs found for {ep} under prefix {prefix}")
+    print(f"\n--- Reading Bronze files for session={session_key} ---")
+    for ep in endpoints:
+        if ep == "sessions":
+            # For sessions, read season files and filter by session_key
+            path_pattern = f"{base}/bronze/sessions/season={season}/*/*.json"
+        else:
+            path_pattern = f"{base}/bronze/{ep}/season={season}/session_key={session_key}/*.json"
+
+        try:
+            if base.startswith("file://"):
+                # On local Windows, Hadoop globbing fails with NativeIO UnsatisfiedLinkError.
+                # Resolve paths in Python first.
+                local_root = Path(url2pathname(urlparse(base).path))
+                if ep == "sessions":
+                    matched_files = list((local_root / "bronze" / "sessions" / f"season={season}").glob("*/*.json"))
+                else:
+                    matched_files = list((local_root / "bronze" / ep / f"season={season}" / f"session_key={session_key}").glob("*.json"))
+
+                if not matched_files:
+                    print(f"  [WARN] No records found for {ep} at {path_pattern}")
+                    continue
+                file_paths = [str(p) for p in matched_files]
+                df_raw = spark.read.json(file_paths)
+            else:
+                df_raw = spark.read.json(path_pattern)
+
+            # If sessions, filter to the requested session_key
+            if ep == "sessions" and "session_key" in df_raw.columns:
+                df_raw = df_raw.filter(df_raw.session_key.cast("int") == session_key)
+
+            if df_raw.rdd.isEmpty():
+                print(f"  [WARN] Empty dataframe for {ep} at {path_pattern}")
                 continue
 
-            local_file = bronze_cache / f"{ep}.json"
-            target_blobs[0].download_to_filename(str(local_file))
-            print(f"  Downloaded {ep}: {target_blobs[0].name} ({local_file.stat().st_size / 1024:.1f} KB)")
-            raw_dfs[ep] = spark.read.json(str(local_file))
+            raw_dfs[ep] = df_raw
+            print(f"  Loaded {ep} from {path_pattern}")
+        except Exception as e:
+            # Handles path not found or empty glob
+            print(f"  [WARN] Could not read {ep} at {path_pattern}: {e}")
+            continue
 
-        print("\n--- Applying PySpark Silver Transformations ---")
+    print("\n--- Applying PySpark Silver Transformations & Writing Directly ---")
 
-        # 1. dim_sessions
-        if "sessions" in raw_dfs:
-            silver_sessions = transform_dim_sessions(raw_dfs["sessions"])
-            counts["dim_sessions"] = _write_and_upload_parquet(
-                bucket, silver_sessions, "dim_sessions", season, session_key, silver_out
-            )
+    # Helper to write Silver DataFrame using Spark
+    def _save_silver(df: DataFrame, table_name: str) -> int:
+        df_cached = df.cache()
+        cnt = df_cached.count()
+        if cnt > 0:
+            out_path = f"{base}/silver/{table_name}/season={season}/session_key={session_key}"
+            df_cached.write.mode("overwrite").parquet(out_path)
+            print(f"  Wrote {table_name}: {out_path} ({cnt:,} rows)")
+        return cnt
 
-        # 2. dim_drivers
-        if "drivers" in raw_dfs:
-            silver_drivers = transform_dim_drivers(raw_dfs["drivers"])
-            counts["dim_drivers"] = _write_and_upload_parquet(
-                bucket, silver_drivers, "dim_drivers", season, session_key, silver_out
-            )
+    # 1. dim_sessions
+    if "sessions" in raw_dfs:
+        silver_sessions = transform_dim_sessions(raw_dfs["sessions"])
+        counts["dim_sessions"] = _save_silver(silver_sessions, "dim_sessions")
 
-        # 3. fct_stints
-        silver_stints: DataFrame | None = None
-        if "stints" in raw_dfs:
-            silver_stints = transform_fct_stints(raw_dfs["stints"])
-            counts["fct_stints"] = _write_and_upload_parquet(
-                bucket, silver_stints, "fct_stints", season, session_key, silver_out
-            )
+    # 2. dim_drivers
+    if "drivers" in raw_dfs:
+        silver_drivers = transform_dim_drivers(raw_dfs["drivers"])
+        counts["dim_drivers"] = _save_silver(silver_drivers, "dim_drivers")
 
-        # 4. fct_laps (with tyre_life joined)
-        if "laps" in raw_dfs:
-            silver_laps = transform_fct_laps(raw_dfs["laps"], df_stints=silver_stints)
-            counts["fct_laps"] = _write_and_upload_parquet(
-                bucket, silver_laps, "fct_laps", season, session_key, silver_out
-            )
+    # 3. fct_stints
+    silver_stints: DataFrame | None = None
+    if "stints" in raw_dfs:
+        silver_stints = transform_fct_stints(raw_dfs["stints"])
+        counts["fct_stints"] = _save_silver(silver_stints, "fct_stints")
 
-        # 5. fct_pit
-        if "pit" in raw_dfs:
-            silver_pit = transform_fct_pit(raw_dfs["pit"])
-            counts["fct_pit"] = _write_and_upload_parquet(
-                bucket, silver_pit, "fct_pit", season, session_key, silver_out
-            )
+    # 4. fct_laps (with tyre_life joined)
+    if "laps" in raw_dfs:
+        silver_laps = transform_fct_laps(raw_dfs["laps"], df_stints=silver_stints)
+        counts["fct_laps"] = _save_silver(silver_laps, "fct_laps")
 
-        # 6. fct_weather
-        if "weather" in raw_dfs:
-            silver_weather = transform_fct_weather(raw_dfs["weather"])
-            counts["fct_weather"] = _write_and_upload_parquet(
-                bucket, silver_weather, "fct_weather", season, session_key, silver_out
-            )
+    # 5. fct_pit
+    if "pit" in raw_dfs:
+        silver_pit = transform_fct_pit(raw_dfs["pit"])
+        counts["fct_pit"] = _save_silver(silver_pit, "fct_pit")
 
-        # 7. fct_car_data
-        if "car_data" in raw_dfs:
-            silver_car_data = transform_fct_car_data(raw_dfs["car_data"])
-            counts["fct_car_data"] = _write_and_upload_parquet(
-                bucket, silver_car_data, "fct_car_data", season, session_key, silver_out
-            )
+    # 6. fct_weather
+    if "weather" in raw_dfs:
+        silver_weather = transform_fct_weather(raw_dfs["weather"])
+        counts["fct_weather"] = _save_silver(silver_weather, "fct_weather")
+
+    # 7. fct_car_data
+    if "car_data" in raw_dfs:
+        silver_car_data = transform_fct_car_data(raw_dfs["car_data"])
+        counts["fct_car_data"] = _save_silver(silver_car_data, "fct_car_data")
 
     print("\n" + "=" * 52)
     print("  F1 Silver Transformation - Phase 2 Summary")
@@ -484,37 +512,11 @@ def run_pipeline(session_key: int = 9472, season: int = 2024) -> dict[str, int]:
     return counts
 
 
-def _write_and_upload_parquet(
-    bucket,
-    df: DataFrame,
-    table_name: str,
-    season: int,
-    session_key: int,
-    temp_path: Path,
-) -> int:
-    import pyarrow as pa
-    import pyarrow.parquet as pq
-
-    rows = [r.asDict(recursive=True) for r in df.collect()]
-    count = len(rows)
-    if count == 0:
-        return 0
-
-    table = pa.Table.from_pylist(rows)
-    local_file = temp_path / f"{table_name}.parquet"
-    pq.write_table(table, str(local_file), compression="snappy")
-
-    gcs_blob_name = f"silver/{table_name}/season={season}/session_key={session_key}/{table_name}.parquet"
-    blob = bucket.blob(gcs_blob_name)
-    blob.upload_from_filename(str(local_file))
-    print(f"  Uploaded to GCS: gs://{bucket.name}/{gcs_blob_name} ({count:,} rows, {local_file.stat().st_size / 1024:.1f} KB)")
-    return count
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="F1 Bronze to Silver PySpark Job")
     parser.add_argument("--session-key", type=int, default=9472)
     parser.add_argument("--season", type=int, default=2024)
+    parser.add_argument("--base-uri", type=str, default=None, help="Base URI (e.g. gs://bucket or file:///path)")
     args = parser.parse_args()
 
-    run_pipeline(session_key=args.session_key, season=args.season)
+    run_pipeline(session_key=args.session_key, season=args.season, base_uri=args.base_uri)

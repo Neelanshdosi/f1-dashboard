@@ -175,25 +175,29 @@ The ingestion command also accepts `--config`, `--season` (comma-separated years
 
 ### Run Silver and Gold jobs
 
-Both Spark jobs accept `--session-key` and `--season` (default session 9472, season 2024):
+Both Spark jobs accept `--session-key`, `--season`, and `--base-uri` (default session 9472, season 2024, default base URI `gs://${GCS_BUCKET}`):
 
 ```bash
-SPARK_LOCAL_MODE=1 python spark_jobs/bronze_to_silver.py --session-key 9472 --season 2024
-SPARK_LOCAL_MODE=1 python spark_jobs/silver_to_gold.py --session-key 9472 --season 2024
+SPARK_LOCAL_MODE=1 python spark_jobs/bronze_to_silver.py --session-key 9472 --season 2024 --base-uri file:///path/to/lakehouse
+SPARK_LOCAL_MODE=1 python spark_jobs/silver_to_gold.py --session-key 9472 --season 2024 --base-uri file:///path/to/lakehouse
 ```
 
-`SPARK_LOCAL_MODE=1` selects the jobs' local single-worker Spark configuration. Without it, the jobs retain the Spark settings supplied by `spark-submit`.
+`SPARK_LOCAL_MODE=1` selects the jobs' local single-worker Spark configuration. Without it, the jobs retain the Spark settings supplied by `spark-submit`. When `--base-uri` starts with `file://`, the jobs run locally without downloading blobs to the driver temp directory, and `silver_to_gold` skips the BigQuery upload step.
+
+The jobs read and write `gs://` directly through the Cloud Storage connector available natively on Dataproc.
 
 Dataproc Serverless submission form (replace the bracketed values):
 
 ```bash
 gcloud dataproc batches submit pyspark spark_jobs/bronze_to_silver.py \
   --region=[region] --deps-bucket=[bucket] \
-  -- --session-key=[session_key] --season=[season]
+  -- --session-key=[session_key] --season=[season] --base-uri=gs://[bucket]
 gcloud dataproc batches submit pyspark spark_jobs/silver_to_gold.py \
   --region=[region] --deps-bucket=[bucket] \
-  -- --session-key=[session_key] --season=[season]
+  -- --session-key=[session_key] --season=[season] --base-uri=gs://[bucket]
 ```
+
+> **Note**: Dataproc execution: `TODO(owner): verify on Dataproc`.
 
 ### Refresh and inspect dashboard data
 

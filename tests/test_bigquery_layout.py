@@ -86,12 +86,9 @@ def test_gold_load_jobs_use_partition_decorator_and_write_truncate():
     assert job_config.clustering_fields is None
 
 
-def test_loading_two_different_session_keys_produces_two_different_destinations(tmp_path):
+def test_loading_two_different_session_keys_produces_two_different_destinations(spark, monkeypatch):
     project_id = "test-project"
-    bucket = Mock()
-    bucket.name = "test-bucket"
-    mock_blob = Mock()
-    bucket.blob.return_value = mock_blob
+    base_uri = "gs://test-bucket"
 
     # Test loading session 9472 and session 9473
     for session_key in [9472, 9473]:
@@ -99,23 +96,20 @@ def test_loading_two_different_session_keys_produces_two_different_destinations(
         load_job = Mock()
         bq_client.load_table_from_uri.return_value = load_job
 
-        df = Mock()
-        df.collect.return_value = [
-            Mock(asDict=lambda recursive=True, sk=session_key: {
-                "session_key": sk,
-                "driver_number": 1,
-            })
-        ]
+        df = spark.createDataFrame([{"session_key": session_key, "driver_number": 1}])
+        # Monkeypatch DataFrameWriter.parquet so it doesn't try to connect to GCS Hadoop connector
+        from pyspark.sql.readwriter import DataFrameWriter
+        monkeypatch.setattr(DataFrameWriter, "parquet", lambda self, path: None)
 
         count = _write_and_load_gold(
-            bucket=bucket,
             bq_client=bq_client,
             df=df,
             table_name="agg_driver_race_summary",
             season=2024,
             session_key=session_key,
-            temp_path=tmp_path,
+            base_uri=base_uri,
             project_id=project_id,
+            is_local=False,
         )
 
         assert count == 1
@@ -125,13 +119,18 @@ def test_loading_two_different_session_keys_produces_two_different_destinations(
         assert dest.endswith(f"${session_key}")
 
 
-def test_validate_session_key_raises_on_mismatch():
+def test_validate_session_key_raises_on_mismatch(spark):
     import pytest
 
-    valid_rows = [{"session_key": 9472, "val": 1}, {"session_key": 9472, "val": 2}]
-    _validate_session_key(valid_rows, 9472)
+    valid_df = spark.createDataFrame(
+        [{"session_key": 9472, "val": 1}, {"session_key": 9472, "val": 2}]
+    )
+    _validate_session_key(valid_df, 9472)
 
-    invalid_rows = [{"session_key": 9472, "val": 1}, {"session_key": 9473, "val": 2}]
-    with pytest.raises(ValueError, match="invalid session_key=9473, expected 9472"):
-        _validate_session_key(invalid_rows, 9472)
+    invalid_df = spark.createDataFrame(
+        [{"session_key": 9472, "val": 1}, {"session_key": 9473, "val": 2}]
+    )
+    with pytest.raises(ValueError, match="invalid session_key, expected 9472"):
+        _validate_session_key(invalid_df, 9472)
+
 
