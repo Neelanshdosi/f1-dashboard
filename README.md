@@ -96,7 +96,7 @@ Driver status in `agg_race_results` is evaluated strictly in the following order
 5. Otherwise (including drivers with no session result row) → `"Unclassified"`
 
 #### OpenF1 Starting Grid Endpoint Coverage
-starting_grid is a beta endpoint with sparse coverage: 1 of 11 probed sessions returned rows (probed on 2026-10-21).
+When querying `/v1/starting_grid` by `session_key`, 1 of 11 probed sessions returned rows (probed on 2026-10-21).
 
 | Session Key | Year | Meeting / Grand Prix | Session Type | HTTP Status | Rows Returned |
 |---|---|---|---|---|---:|
