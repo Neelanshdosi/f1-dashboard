@@ -98,7 +98,8 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
             "session_key": 9472,
             "meeting_key": 1229,
             "year": 2024,
-            "session_name": "2024 Bahrain Grand Prix",
+            "session_name": "Race",
+            "meeting_name": "Bahrain Grand Prix",
             "circuit_short_name": "Sakhir",
             "country_name": "Bahrain",
             "date_start": "2024-03-02 15:00:00+00:00",
@@ -107,7 +108,8 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
             "session_key": 9693,
             "meeting_key": 1254,
             "year": 2025,
-            "session_name": "2025 Australian Grand Prix",
+            "session_name": "Race",
+            "meeting_name": "Australian Grand Prix",
             "circuit_short_name": "Albert Park",
             "country_name": "Australia",
             "date_start": "2025-03-16 04:00:00+00:00",
@@ -253,7 +255,7 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
     # Assert session 9693 and 10014 (no race results) have NO rows in race_results
     assert all(r["session_key"] == 9472 for r in rr)
 
-    # 3. Assert races list is sorted by date and has has_results
+    # 3. Assert races list is sorted by year and date
     races = dashboard["races"]
     assert len(races) == 3
     assert races[0]["session_key"] == 9472
@@ -261,15 +263,16 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
     assert races[0]["circuit"] == "Sakhir"
     assert races[0]["has_results"] is True
 
-    assert races[1]["session_key"] == 9693
-    assert races[1]["date"] == "2025-03-16"
-    assert races[1]["circuit"] == "Albert Park"
+    # 4. Verify fallback for session 10014 (empty date from dim_sessions missing)
+    assert races[1]["session_key"] == 10014
+    assert races[1]["date"] == ""
+    assert races[1]["name"] == "2025 Race 10014"
+    assert races[1]["circuit"] == "Circuit"
     assert races[1]["has_results"] is False
 
-    # 4. Verify fallback for session 10014
-    assert races[2]["session_key"] == 10014
-    assert races[2]["date"] == "2025-04-13"
-    assert races[2]["name"] == "2025 Bahrain Grand Prix"
+    assert races[2]["session_key"] == 9693
+    assert races[2]["date"] == "2025-03-16"
+    assert races[2]["circuit"] == "Albert Park"
     assert races[2]["has_results"] is False
 
 
@@ -615,3 +618,82 @@ def test_schema_meta_and_has_results():
     for row in data["race_results"]:
         for col in required_cols:
             assert col in row
+
+
+def test_build_race_entry_from_api_mocked():
+    """Verify that races entries are built dynamically from /v1/sessions and /v1/meetings."""
+    from unittest.mock import MagicMock
+
+    from scripts.refresh_dashboard_data import build_race_entry_from_api
+
+    mock_session = MagicMock()
+
+    # Case 1: meeting_name present
+    def fake_fetch_with_meeting(session, endpoint, **kwargs):
+        if endpoint == "sessions":
+            return [{
+                "session_key": 9472,
+                "meeting_key": 1229,
+                "year": 2024,
+                "country_name": "Bahrain",
+                "circuit_short_name": "Sakhir",
+                "date_start": "2024-03-02T15:00:00+00:00",
+            }]
+        if endpoint == "meetings":
+            return [{
+                "meeting_key": 1229,
+                "meeting_name": "Bahrain Grand Prix",
+            }]
+    import scripts.refresh_dashboard_data as rdd
+    orig_fetch = rdd.fetch
+    try:
+        rdd.fetch = fake_fetch_with_meeting
+        entry = build_race_entry_from_api(mock_session, 9472, has_results=True)
+        assert entry["name"] == "2024 Bahrain Grand Prix"
+        assert entry["circuit"] == "Sakhir"
+        assert entry["date"] == "2024-03-02"
+        assert entry["has_results"] is True
+        assert entry["meeting_key"] == 1229
+
+        # Case 2: meeting_name missing, fallback to country_name Grand Prix
+        def fake_fetch_fallback(session, endpoint, **kwargs):
+            if endpoint == "sessions":
+                return [{
+                    "session_key": 9999,
+                    "meeting_key": None,
+                    "year": 2025,
+                    "country_name": "Monaco",
+                    "circuit_short_name": "Monte Carlo",
+                    "date_start": "2025-05-25T13:00:00+00:00",
+                }]
+            return []
+
+        rdd.fetch = fake_fetch_fallback
+        fallback_entry = build_race_entry_from_api(mock_session, 9999, has_results=False)
+        assert fallback_entry["name"] == "2025 Monaco Grand Prix"
+        assert fallback_entry["circuit"] == "Monte Carlo"
+        assert fallback_entry["date"] == "2025-05-25"
+        assert fallback_entry["has_results"] is False
+    finally:
+        rdd.fetch = orig_fetch
+
+
+def test_no_hardcoded_race_names_in_scripts():
+    """Grep assertion: verify there are no hardcoded race names dictionaries or lists in scripts/."""
+    scripts_dir = ROOT / "scripts"
+    disallowed_patterns = ["RACE_NAMES", "RACE_DATES"]
+    disallowed_race_strings = [
+        "2024 Bahrain Grand Prix",
+        "2025 Australian Grand Prix",
+        "2025 Monaco Grand Prix",
+        "2025 British Grand Prix",
+        "2025 Abu Dhabi Grand Prix",
+    ]
+
+    for py_file in scripts_dir.glob("*.py"):
+        content = py_file.read_text(encoding="utf-8")
+        for pat in disallowed_patterns:
+            assert pat not in content, f"Found '{pat}' in {py_file.name}"
+        for s in disallowed_race_strings:
+            assert s not in content, f"Found hardcoded race name '{s}' in {py_file.name}"
+

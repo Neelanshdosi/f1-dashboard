@@ -101,15 +101,15 @@ When querying `/v1/starting_grid` by `session_key`, 1 of 11 probed sessions retu
 | Session Key | Year | Meeting / Grand Prix | Session Type | HTTP Status | Rows Returned |
 |---|---|---|---|---|---:|
 | `7783` | 2023 | Australian Grand Prix | Qualifying | 200 | 18 |
-| `9158` | 2023 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9158` | 2023 | Singapore Grand Prix | Practice 1 | 404 (`{"detail":"No results found."}`) | 0 |
 | `9197` | 2023 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 | `9472` | 2024 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 | `9480` | 2024 | Saudi Arabian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 | `9662` | 2024 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9693` | 2024 | Las Vegas Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9839` | 2025 | Australian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9947` | 2025 | Chinese Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9979` | 2025 | Japanese Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9693` | 2025 | Australian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9839` | 2025 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9947` | 2025 | British Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9979` | 2025 | Monaco Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 | `10014` | 2025 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 
 ## Data quality

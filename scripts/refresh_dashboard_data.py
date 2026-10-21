@@ -18,22 +18,6 @@ DATA_FILES = (
     ROOT / "docs" / "gold_data.json",
 )
 API = "https://api.openf1.org/v1"
-RACE_NAMES = {
-    9472: "2024 Bahrain Grand Prix",
-    9693: "2025 Australian Grand Prix",
-    10014: "2025 Bahrain Grand Prix",
-    9979: "2025 Monaco Grand Prix",
-    9947: "2025 British Grand Prix",
-    9839: "2025 Abu Dhabi Grand Prix",
-}
-RACE_DATES = {
-    9472: "2024-03-02",
-    9693: "2025-03-16",
-    10014: "2025-04-13",
-    9979: "2025-05-25",
-    9947: "2025-07-06",
-    9839: "2025-12-07",
-}
 ENDPOINTS = ("drivers", "laps", "stints", "pit", "weather")
 
 GOLD_TABLE_MAP = {
@@ -132,11 +116,11 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
         else:
             dashboard[json_key] = table_records
 
-    # 2. Build races list from dim_sessions with fallback to RACE_NAMES / RACE_DATES
+    # 2. Build races list from dim_sessions
     sessions_by_key = {}
     try:
         dim_query = f"""
-            SELECT session_key, meeting_key, year, session_name, circuit_short_name, country_name, date_start
+            SELECT session_key, meeting_key, year, session_name, meeting_name, circuit_short_name, country_name, date_start
             FROM `{project_id}.f1_analytics.dim_sessions`
             WHERE session_key IN ({keys_csv})
         """
@@ -153,19 +137,22 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
         if not year:
             year = 2024 if sk == 9472 else 2025
 
-        name = meta.get("session_name") or RACE_NAMES.get(sk) or f"{year} Race {sk}"
+        meeting_name = meta.get("meeting_name")
+        country_name = meta.get("country_name")
 
-        if meta.get("circuit_short_name"):
-            circuit = meta["circuit_short_name"]
-        elif sk == 9472:
-            circuit = "Sakhir"
-        elif sk in RACE_NAMES:
-            circuit = RACE_NAMES[sk].removeprefix(f"{year} ").removesuffix(" Grand Prix")
+        if meeting_name:
+            name = f"{year} {meeting_name}"
+        elif country_name:
+            name = f"{year} {country_name} Grand Prix"
+        elif meta.get("session_name"):
+            name = meta["session_name"]
         else:
-            circuit = "Circuit"
+            name = f"{year} Race {sk}"
+
+        circuit = meta["circuit_short_name"] if meta.get("circuit_short_name") else "Circuit"
 
         date_val = meta.get("date_start")
-        date_str = str(date_val)[:10] if date_val is not None else RACE_DATES.get(sk, "")
+        date_str = str(date_val)[:10] if date_val is not None else ""
 
         race_entry = {
             "session_key": sk,
@@ -187,10 +174,10 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
     races_with_results = [r["session_key"] for r in races if r.get("has_results")]
     races_with_grid = sorted(
         {
-                r["session_key"]
-                for r in dashboard.get("race_results", [])
-                if r.get("grid_position") is not None
-            }
+            r["session_key"]
+            for r in dashboard.get("race_results", [])
+            if r.get("grid_position") is not None
+        }
     )
     dashboard["meta"] = {
         "races_with_results": races_with_results,
@@ -200,11 +187,20 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
     return dashboard
 
 
-def fetch(session: requests.Session, endpoint: str, session_key: int) -> list[dict]:
+def fetch(
+    session: requests.Session,
+    endpoint: str,
+    session_key: int | None = None,
+    **extra_params,
+) -> list[dict]:
     # OpenF1 allows 30 requests/minute. Keep this refresh at or below that rate.
     time.sleep(2.1)
     url = f"{API}/{endpoint}"
-    params = {"session_key": session_key}
+    params = {}
+    if session_key is not None:
+        params["session_key"] = session_key
+    params.update(extra_params)
+
     response = session.get(url, params=params, timeout=90)
 
     if response.status_code == 200:
@@ -227,6 +223,55 @@ def fetch(session: requests.Session, endpoint: str, session_key: int) -> list[di
 
     response.raise_for_status()
     return response.json()
+
+
+def build_race_entry_from_api(
+    session: requests.Session,
+    session_key: int,
+    has_results: bool = False,
+) -> dict:
+    """Build race entry dict from OpenF1 /v1/sessions and /v1/meetings."""
+    sessions_data = fetch(session, "sessions", session_key=session_key)
+    if not sessions_data:
+        raise RuntimeError(f"OpenF1 sessions endpoint returned no data for session_key={session_key}")
+
+    sess = sessions_data[0]
+    year = sess.get("year") or 2025
+    meeting_key = sess.get("meeting_key")
+    country_name = sess.get("country_name")
+    circuit_short_name = sess.get("circuit_short_name")
+    date_start = sess.get("date_start")
+
+    meeting_name = None
+    if meeting_key is not None:
+        try:
+            meetings_data = fetch(session, "meetings", meeting_key=meeting_key)
+            if meetings_data:
+                meeting_name = meetings_data[0].get("meeting_name")
+        except Exception as e:
+            print(f"  [WARN] Failed to fetch meeting metadata for meeting_key={meeting_key}: {e}")
+
+    if meeting_name:
+        name = f"{year} {meeting_name}"
+    elif country_name:
+        name = f"{year} {country_name} Grand Prix"
+    else:
+        name = f"{year} Race {session_key}"
+
+    circuit = circuit_short_name or "Circuit"
+    date_str = str(date_start)[:10] if date_start else ""
+
+    entry = {
+        "session_key": session_key,
+        "year": year,
+        "name": name,
+        "circuit": circuit,
+        "date": date_str,
+        "has_results": has_results,
+    }
+    if meeting_key is not None:
+        entry["meeting_key"] = meeting_key
+    return entry
 
 
 def as_records(df) -> list[dict]:
@@ -325,28 +370,20 @@ def main(argv: list[str] | None = None) -> None:
     with DATA_FILES[0].open(encoding="utf-8") as handle:
         dashboard = json.load(handle)
 
-    # Retain the existing Bahrain 2024 session and replace/add these five real 2025 races.
+    _project_id, session_keys = _load_dashboard_config()
     existing_sessions = {
         race["session_key"]: race for race in dashboard.get("races", [])
     }
-    existing_sessions.setdefault(
-        9472,
-        {
-            "session_key": 9472,
-            "year": 2024,
-            "name": "2024 Bahrain Grand Prix",
-            "circuit": "Sakhir",
-            "date": "2024-03-02",
-        },
-    )
 
     all_race_results: list[dict] = [
         row
         for row in dashboard.get("race_results", [])
-        if row.get("session_key") not in RACE_NAMES
+        if row.get("session_key") not in session_keys
     ]
 
-    for session_key, race_name in RACE_NAMES.items():
+    for session_key in session_keys:
+        race_entry = build_race_entry_from_api(http, session_key, has_results=False)
+        race_name = race_entry["name"]
         print(f"Fetching {race_name} ({session_key})", flush=True)
         raw = {endpoint: fetch(http, endpoint, session_key) for endpoint in ENDPOINTS}
         if not raw["drivers"] or not raw["laps"] or not raw["stints"]:
@@ -412,16 +449,8 @@ def main(argv: list[str] | None = None) -> None:
             sorted_results = sort_race_results(results_records)
             all_race_results.extend(sorted_results)
 
-        session_meta = raw["drivers"][0]
-        existing_sessions[session_key] = {
-            "session_key": session_key,
-            "year": 2024 if session_key == 9472 else 2025,
-            "name": race_name,
-            "circuit": race_name.removeprefix("2024 ").removeprefix("2025 ").removesuffix(" Grand Prix"),
-            "date": RACE_DATES[session_key],
-            "meeting_key": session_meta.get("meeting_key"),
-            "has_results": has_results,
-        }
+        race_entry["has_results"] = has_results
+        existing_sessions[session_key] = race_entry
 
     dashboard["race_results"] = all_race_results
     races_list = sorted(

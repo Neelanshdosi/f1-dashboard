@@ -1092,6 +1092,7 @@ DIM_SESSIONS_SCHEMA = [
     ("location", "STRING"),
     ("session_type", "STRING"),
     ("session_name", "STRING"),
+    ("meeting_name", "STRING"),
     ("date_start", "TIMESTAMP"),
     ("date_end", "TIMESTAMP"),
     ("gmt_offset", "STRING"),

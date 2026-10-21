@@ -67,6 +67,13 @@ def transform_dim_sessions(df: DataFrame) -> DataFrame:
     from pyspark.sql import functions as F
     from pyspark.sql.types import IntegerType
 
+    df = _ensure_optional_columns(
+        df,
+        {
+            "meeting_name": (None, "string"),
+        },
+    )
+
     transformed = (
         df.filter(F.col("is_cancelled") == False)  # noqa: E712
         .withColumn("session_key", F.col("session_key").cast(IntegerType()))
@@ -78,6 +85,7 @@ def transform_dim_sessions(df: DataFrame) -> DataFrame:
         .withColumn("location", F.trim(F.col("location")))
         .withColumn("session_type", F.trim(F.col("session_type")))
         .withColumn("session_name", F.trim(F.col("session_name")))
+        .withColumn("meeting_name", F.trim(F.col("meeting_name")))
         .withColumn("date_start", F.to_timestamp(F.col("date_start")))
         .withColumn("date_end", F.to_timestamp(F.col("date_end")))
         .withColumn("year", F.col("year").cast(IntegerType()))
@@ -92,6 +100,7 @@ def transform_dim_sessions(df: DataFrame) -> DataFrame:
             "location",
             "session_type",
             "session_name",
+            "meeting_name",
             "date_start",
             "date_end",
             "gmt_offset",

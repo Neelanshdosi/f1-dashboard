@@ -100994,7 +100994,7 @@
       "session_key": 9472,
       "year": 2024,
       "name": "2024 Bahrain Grand Prix",
-      "circuit": "Bahrain",
+      "circuit": "Sakhir",
       "date": "2024-03-02",
       "meeting_key": 1229,
       "has_results": true
@@ -101003,7 +101003,7 @@
       "session_key": 9693,
       "year": 2025,
       "name": "2025 Australian Grand Prix",
-      "circuit": "Australian",
+      "circuit": "Melbourne",
       "date": "2025-03-16",
       "meeting_key": 1254,
       "has_results": true
@@ -101012,7 +101012,7 @@
       "session_key": 10014,
       "year": 2025,
       "name": "2025 Bahrain Grand Prix",
-      "circuit": "Bahrain",
+      "circuit": "Sakhir",
       "date": "2025-04-13",
       "meeting_key": 1257,
       "has_results": true
@@ -101021,7 +101021,7 @@
       "session_key": 9979,
       "year": 2025,
       "name": "2025 Monaco Grand Prix",
-      "circuit": "Monaco",
+      "circuit": "Monte Carlo",
       "date": "2025-05-25",
       "meeting_key": 1261,
       "has_results": true
@@ -101030,7 +101030,7 @@
       "session_key": 9947,
       "year": 2025,
       "name": "2025 British Grand Prix",
-      "circuit": "British",
+      "circuit": "Silverstone",
       "date": "2025-07-06",
       "meeting_key": 1277,
       "has_results": true
@@ -101039,7 +101039,7 @@
       "session_key": 9839,
       "year": 2025,
       "name": "2025 Abu Dhabi Grand Prix",
-      "circuit": "Abu Dhabi",
+      "circuit": "Yas Marina Circuit",
       "date": "2025-12-07",
       "meeting_key": 1276,
       "has_results": true
