@@ -78,6 +78,8 @@ endpoints:
   - pit
   - weather
   - car_data
+  - session_result
+  - starting_grid
 
 # ── Scope ─────────────────────────────────────
 # Start small: 2–3 races, confirm row counts, then expand

@@ -16,6 +16,7 @@ env/
 !vercel.json
 !dashboard/gold_data.json
 !docs/gold_data.json
+!tests/fixtures/*.json
 sa-key*.json
 
 # Local bronze data

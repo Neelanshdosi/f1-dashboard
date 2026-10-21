@@ -56,6 +56,83 @@ def test_get_empty_endpoint_returns_empty_list():
     assert data == []
 
 
+@resp_lib.activate
+def test_get_session_result_with_fixture():
+    import json
+    from pathlib import Path
+    fixture_path = Path(__file__).parent / "fixtures" / "session_result_9662.json"
+    with open(fixture_path) as f:
+        fixture_data = json.load(f)
+
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/session_result",
+        json=fixture_data,
+        status=200,
+    )
+    with _make_client() as client:
+        data = client.get("session_result", params={"session_key": 9662})
+
+    assert len(data) == 20
+    # Normal response: P1
+    assert data[0]["position"] == 1
+    assert data[0]["driver_number"] == 4
+    assert data[0]["points"] == 25.0
+    # Null position response (DNF/DNS):
+    null_pos = [r for r in data if r.get("position") is None]
+    assert len(null_pos) >= 1
+    assert null_pos[0]["dnf"] is True
+    assert null_pos[0]["position"] is None
+
+
+@resp_lib.activate
+def test_get_session_result_empty():
+    resp_lib.add(resp_lib.GET, f"{BASE_URL}/session_result", json=[], status=200)
+    with _make_client() as client:
+        data = client.get("session_result", params={"session_key": 9472})
+    assert data == []
+
+
+@resp_lib.activate
+def test_get_starting_grid_with_fixture_and_null_position():
+    import json
+    from pathlib import Path
+    fixture_path = Path(__file__).parent / "fixtures" / "starting_grid_7783.json"
+    with open(fixture_path) as f:
+        fixture_data = json.load(f)
+
+    # Inject a driver with null position to test null position tolerance
+    fixture_data.append({
+        "driver_number": 99,
+        "position": None,
+        "lap_duration": None,
+        "meeting_key": 1143,
+        "session_key": 7783,
+    })
+
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/starting_grid",
+        json=fixture_data,
+        status=200,
+    )
+    with _make_client() as client:
+        data = client.get("starting_grid", params={"session_key": 7783})
+
+    assert len(data) == 19
+    assert data[0]["position"] == 1
+    assert data[-1]["position"] is None
+    assert data[-1]["driver_number"] == 99
+
+
+@resp_lib.activate
+def test_get_starting_grid_empty():
+    resp_lib.add(resp_lib.GET, f"{BASE_URL}/starting_grid", json=[], status=200)
+    with _make_client() as client:
+        data = client.get("starting_grid", params={"session_key": 9472})
+    assert data == []
+
+
 # ── Retry logic ───────────────────────────────────────────────────────────────
 
 @resp_lib.activate

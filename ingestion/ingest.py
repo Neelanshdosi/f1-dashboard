@@ -146,17 +146,27 @@ def _ingest_session(
                 drivers_cache = data
 
         counts[endpoint] = len(data)
-        log.info(
-            "Endpoint fetched",
-            extra={
-                "endpoint": endpoint,
-                "session_key": session_key,
-                "row_count": len(data),
-            },
-        )
+        if endpoint in ("session_result", "starting_grid") and not data:
+            log.warning(
+                "Beta endpoint returned empty data or was unavailable",
+                extra={"endpoint": endpoint, "session_key": session_key},
+            )
+        else:
+            log.info(
+                "Endpoint fetched",
+                extra={
+                    "endpoint": endpoint,
+                    "session_key": session_key,
+                    "row_count": len(data),
+                },
+            )
 
         if dry_run:
             log.info("Dry-run: skipping upload", extra={"endpoint": endpoint})
+            continue
+
+        if not data:
+            # Nothing to upload for empty array
             continue
 
         upload(
