@@ -16,15 +16,30 @@ GOLD_DATASETS = {
 }
 
 
-def collect_stats(data: dict) -> tuple[dict[str, int], int]:
+def collect_stats(data: dict) -> tuple[dict[str, int], int, list[int], list[int]]:
     counts = {table: len(data.get(key, [])) for table, key in GOLD_DATASETS.items()}
-    return counts, len(data.get("races", []))
+    meta = data.get("meta", {})
+    races_with_results = meta.get(
+        "races_with_results",
+        [r["session_key"] for r in data.get("races", []) if r.get("has_results")],
+    )
+    races_with_grid = meta.get(
+        "races_with_grid",
+        sorted(
+            {
+                    r["session_key"]
+                    for r in data.get("race_results", [])
+                    if r.get("grid_position") is not None
+                }
+        ),
+    )
+    return counts, len(data.get("races", [])), races_with_results, races_with_grid
 
 
 def main() -> None:
     with DATA_FILE.open(encoding="utf-8") as data_file:
         data = json.load(data_file)
-    counts, race_count = collect_stats(data)
+    counts, race_count, races_with_results, races_with_grid = collect_stats(data)
 
     print("Gold dataset rows")
     print("| Dataset | Rows |")
@@ -32,6 +47,8 @@ def main() -> None:
     for table, count in counts.items():
         print(f"| `{table}` | {count:,} |")
     print(f"\nRaces: {race_count}")
+    print(f"Races with results: {races_with_results}")
+    print(f"Races with grid: {races_with_grid}")
 
 
 if __name__ == "__main__":

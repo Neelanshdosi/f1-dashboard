@@ -173,6 +173,7 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
             "name": name,
             "circuit": circuit,
             "date": date_str,
+            "has_results": sk in sessions_with_results,
         }
         if meta.get("meeting_key") is not None:
             race_entry["meeting_key"] = meta["meeting_key"]
@@ -183,15 +184,47 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
     races.sort(key=lambda r: (r.get("year", 0), r.get("date", "")))
     dashboard["races"] = races
 
+    races_with_results = [r["session_key"] for r in races if r.get("has_results")]
+    races_with_grid = sorted(
+        {
+                r["session_key"]
+                for r in dashboard.get("race_results", [])
+                if r.get("grid_position") is not None
+            }
+    )
+    dashboard["meta"] = {
+        "races_with_results": races_with_results,
+        "races_with_grid": races_with_grid,
+    }
+
     return dashboard
 
 
 def fetch(session: requests.Session, endpoint: str, session_key: int) -> list[dict]:
     # OpenF1 allows 30 requests/minute. Keep this refresh at or below that rate.
     time.sleep(2.1)
-    response = session.get(
-        f"{API}/{endpoint}", params={"session_key": session_key}, timeout=90
-    )
+    url = f"{API}/{endpoint}"
+    params = {"session_key": session_key}
+    response = session.get(url, params=params, timeout=90)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data if isinstance(data, list) else [data]
+
+    if response.status_code == 404:
+        try:
+            err_json = response.json()
+        except Exception:
+            err_json = None
+
+        if isinstance(err_json, dict) and err_json.get("detail") == "No results found.":
+            return []
+
+        raise requests.HTTPError(
+            f"HTTP 404 Not Found for {url} with params {params}: {response.text}",
+            response=response,
+        )
+
     response.raise_for_status()
     return response.json()
 
@@ -225,13 +258,22 @@ def add_defaults(rows: list[dict], fields: tuple[str, ...], default="") -> list[
 
 
 def write_dashboard_data(dashboard: dict) -> None:
+    import tempfile
+
     content = json.dumps(dashboard, indent=2, default=str) + "\n"
     for path in DATA_FILES:
-        path.write_text(content, encoding="utf-8")
+        path_obj = Path(path)
+        path_obj.parent.mkdir(parents=True, exist_ok=True)
+        # Atomic write: write to temp file in same directory, then replace
+        with tempfile.NamedTemporaryFile("w", dir=path_obj.parent, delete=False, encoding="utf-8") as tf:
+            tf.write(content)
+            temp_name = tf.name
+        Path(temp_name).replace(path_obj)
 
 
 def main(argv: list[str] | None = None) -> None:
     import argparse
+    import logging
 
     parser = argparse.ArgumentParser(description="Refresh static F1 dashboard data")
     parser.add_argument(
@@ -262,12 +304,15 @@ def main(argv: list[str] | None = None) -> None:
         transform_dim_drivers,
         transform_fct_laps,
         transform_fct_pit,
+        transform_fct_session_result,
+        transform_fct_starting_grid,
         transform_fct_stints,
         transform_fct_weather,
     )
     from spark_jobs.silver_to_gold import (
         compute_driver_race_summary,
         compute_pit_strategy,
+        compute_race_results,
         compute_tyre_degradation,
         compute_weather_impact,
         get_spark_session,
@@ -295,11 +340,20 @@ def main(argv: list[str] | None = None) -> None:
         },
     )
 
+    all_race_results: list[dict] = [
+        row
+        for row in dashboard.get("race_results", [])
+        if row.get("session_key") not in RACE_NAMES
+    ]
+
     for session_key, race_name in RACE_NAMES.items():
         print(f"Fetching {race_name} ({session_key})", flush=True)
         raw = {endpoint: fetch(http, endpoint, session_key) for endpoint in ENDPOINTS}
         if not raw["drivers"] or not raw["laps"] or not raw["stints"]:
             raise RuntimeError(f"OpenF1 returned incomplete race data for {race_name}")
+
+        raw_session_result = fetch(http, "session_result", session_key)
+        raw_starting_grid = fetch(http, "starting_grid", session_key)
 
         driver_fields = (
             "driver_number", "session_key", "meeting_key", "broadcast_name",
@@ -331,19 +385,63 @@ def main(argv: list[str] | None = None) -> None:
                 if row.get("session_key") != session_key
             ] + rows
 
+        # Process race_results using Silver transforms and compute_race_results
+        has_results = False
+        if not raw_session_result:
+            logging.error(
+                "OpenF1 session_result is missing or empty for %s (session_key=%s). Omission from race_results.",
+                race_name,
+                session_key,
+            )
+        else:
+            has_results = True
+            for r in raw_session_result:
+                for k in ["duration", "gap_to_leader"]:
+                    if k in r and r[k] is not None:
+                        r[k] = json.dumps(r[k]) if isinstance(r[k], (list, dict)) else str(r[k])
+
+            sr_df = transform_fct_session_result(spark_frame(spark, raw_session_result))
+            sg_df = (
+                transform_fct_starting_grid(spark_frame(spark, raw_starting_grid))
+                if raw_starting_grid
+                else None
+            )
+
+            results_df = compute_race_results(sr_df, sg_df, drivers, stints, pit)
+            results_records = as_records(results_df)
+            sorted_results = sort_race_results(results_records)
+            all_race_results.extend(sorted_results)
+
         session_meta = raw["drivers"][0]
         existing_sessions[session_key] = {
             "session_key": session_key,
-            "year": 2025,
+            "year": 2024 if session_key == 9472 else 2025,
             "name": race_name,
-            "circuit": race_name.removeprefix("2025 ").removesuffix(" Grand Prix"),
+            "circuit": race_name.removeprefix("2024 ").removeprefix("2025 ").removesuffix(" Grand Prix"),
             "date": RACE_DATES[session_key],
             "meeting_key": session_meta.get("meeting_key"),
+            "has_results": has_results,
         }
 
-    dashboard["races"] = sorted(
+    dashboard["race_results"] = all_race_results
+    races_list = sorted(
         existing_sessions.values(), key=lambda race: race.get("date", "")
     )
+    dashboard["races"] = races_list
+
+    races_with_results = [r["session_key"] for r in races_list if r.get("has_results")]
+    races_with_grid = sorted(
+        {
+                r["session_key"]
+                for r in dashboard.get("race_results", [])
+                if r.get("grid_position") is not None
+            }
+    )
+    existing_meta = dashboard.get("meta", {})
+    existing_meta["races_with_results"] = races_with_results
+    existing_meta["races_with_grid"] = races_with_grid
+    dashboard["meta"] = existing_meta
+
     write_dashboard_data(dashboard)
     spark.stop()
     print(f"Wrote {len(dashboard['races'])} races to {len(DATA_FILES)} dashboard data files")
