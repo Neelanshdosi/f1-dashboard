@@ -611,6 +611,22 @@ def run_pipeline(
             telemetry_df, "agg_driver_telemetry", silver_dfs["fct_car_data"].count()
         )
 
+    # 6. Load dim_sessions into BigQuery (unpartitioned)
+    if "dim_sessions" in silver_dfs and not is_local:
+        from google.cloud import bigquery
+
+        dim_sessions_path = f"{base}/silver/dim_sessions/season={season}/session_key={session_key}/*.parquet"
+        load_job = bq_client.load_table_from_uri(
+            dim_sessions_path,
+            f"{project_id}.f1_analytics.dim_sessions",
+            job_config=bigquery.LoadJobConfig(
+                source_format=bigquery.SourceFormat.PARQUET,
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            ),
+        )
+        load_job.result()
+        print(f"  Loaded dim_sessions into BigQuery: {project_id}.f1_analytics.dim_sessions")
+
     # Record run audit
     _record_audit_log(
         base=base,
@@ -818,6 +834,39 @@ def ensure_audit_table(bq_client, project_id: str) -> None:
     bq_client.create_table(table, exists_ok=True)
 
 
+DIM_SESSIONS_SCHEMA = [
+    ("session_key", "INT64"),
+    ("meeting_key", "INT64"),
+    ("circuit_key", "INT64"),
+    ("circuit_short_name", "STRING"),
+    ("country_name", "STRING"),
+    ("country_code", "STRING"),
+    ("location", "STRING"),
+    ("session_type", "STRING"),
+    ("session_name", "STRING"),
+    ("date_start", "TIMESTAMP"),
+    ("date_end", "TIMESTAMP"),
+    ("gmt_offset", "STRING"),
+    ("year", "INT64"),
+    ("season", "INT64"),
+]
+
+
+def ensure_dim_sessions(bq_client, project_id: str, create_dataset: bool = True) -> None:
+    """Ensure unpartitioned dim_sessions table exists in BigQuery."""
+    from google.cloud import bigquery
+
+    dataset_ref = f"{project_id}.f1_analytics"
+    if create_dataset:
+        bq_client.create_dataset(bigquery.Dataset(dataset_ref), exists_ok=True)
+    table_ref = f"{dataset_ref}.dim_sessions"
+    table = bigquery.Table(table_ref)
+    table.schema = [
+        bigquery.SchemaField(name, field_type) for name, field_type in DIM_SESSIONS_SCHEMA
+    ]
+    bq_client.create_table(table, exists_ok=True)
+
+
 def _load_bigquery_config() -> dict:
     import yaml
 
@@ -832,6 +881,7 @@ def ensure_gold_tables(bq_client, project_id: str) -> None:
 
     dataset_ref = f"{project_id}.f1_analytics"
     bq_client.create_dataset(bigquery.Dataset(dataset_ref), exists_ok=True)
+    ensure_dim_sessions(bq_client, project_id, create_dataset=False)
 
     settings = _load_bigquery_config()
     partition = settings["session_key_partition"]

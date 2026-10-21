@@ -115,3 +115,23 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.pipeline_run_audit` (
 );
 
 
+-- 7. Sessions Dimension (unpartitioned)
+CREATE TABLE IF NOT EXISTS `f1_analytics.dim_sessions` (
+    session_key INT64,
+    meeting_key INT64,
+    circuit_key INT64,
+    circuit_short_name STRING,
+    country_name STRING,
+    country_code STRING,
+    location STRING,
+    session_type STRING,
+    session_name STRING,
+    date_start TIMESTAMP,
+    date_end TIMESTAMP,
+    gmt_offset STRING,
+    year INT64,
+    season INT64
+);
+
+
+

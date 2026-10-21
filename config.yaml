@@ -31,6 +31,16 @@ bigquery:
     agg_driver_telemetry:
       clustering_fields: [driver_number]
 
+# ── Dashboard ────────────────────────────────
+dashboard:
+  session_keys:
+    - 9472
+    - 9693
+    - 10014
+    - 9979
+    - 9947
+    - 9839
+
 # ── Data Quality & Validation Rules ─────────
 quality:
   # Laps: conservative limits allowing SC laps, in/out laps (seconds)

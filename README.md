@@ -30,14 +30,15 @@ flowchart LR
   ING --> BRONZE[GCS Bronze<br/>raw JSON]
   BRONZE --> SILVER[PySpark Silver<br/>Parquet on GCS]
   SILVER --> GOLD[PySpark Gold<br/>Parquet aggregates]
-  GOLD --> BQ[BigQuery<br/>f1_analytics]
+  GOLD --> BQ[(BigQuery<br/>f1_analytics)]
 
-  API --> REFRESH[scripts/refresh_dashboard_data.py<br/>Spark transforms]
+  BQ --> REFRESH[scripts/refresh_dashboard_data.py<br/>--source bigquery]
+  API -. fallback .-> REFRESH
   REFRESH --> JSON[gold_data.json]
   JSON --> WEB[Static dashboard<br/>Vercel or GitHub Pages]
 ```
 
-The dashboard loads the static `gold_data.json` produced by the Spark transforms. It does not query BigQuery. `vercel.json` points Vercel at the `dashboard/` directory; no deployed URL is recorded here yet.
+The static dashboard serves data directly from `gold_data.json` without requiring BigQuery access in the browser. The dashboard snapshot is rebuilt directly from BigQuery Gold tables using `python scripts/refresh_dashboard_data.py --source bigquery` (with partition-pruned queries on `session_key`). The default `--source api` mode serves as a local development fallback that fetches directly from OpenF1 and computes transforms via Spark, bypassing GCP. `vercel.json` points Vercel at the `dashboard/` directory; no deployed URL is recorded here yet.
 
 ## Data model
 
@@ -230,11 +231,16 @@ gcloud dataproc batches submit pyspark spark_jobs/silver_to_gold.py \
 ### Refresh and inspect dashboard data
 
 ```bash
-python scripts/refresh_dashboard_data.py
+# Rebuild from BigQuery Gold tables (recommended in production):
+python scripts/refresh_dashboard_data.py --source bigquery
+
+# Rebuild directly from OpenF1 API via local Spark (fallback, bypasses GCP):
+python scripts/refresh_dashboard_data.py --source api
+
 python scripts/dataset_stats.py
 ```
 
-The refresh script fetches its selected OpenF1 sessions, applies the Spark transformations locally, and writes matching JSON files to `dashboard/` and `docs/`.
+The refresh script queries BigQuery Gold or fetches OpenF1 sessions, formats the dashboard snapshot, and writes matching JSON files to `dashboard/` and `docs/`.
 
 ### Benchmark and tests
 
