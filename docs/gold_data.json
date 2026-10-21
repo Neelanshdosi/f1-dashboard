@@ -101453,9 +101453,9 @@
       "name_acronym": "NOR",
       "team_name": "McLaren",
       "team_colour": "FF8000",
-      "grid_position": null,
+      "grid_position": 1,
       "final_position": 1,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101463,7 +101463,8 @@
       "duration_seconds": 6126.304,
       "gap_to_leader_seconds": 0.0,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101472,9 +101473,9 @@
       "name_acronym": "VER",
       "team_name": "Red Bull Racing",
       "team_colour": "3671C6",
-      "grid_position": null,
+      "grid_position": 3,
       "final_position": 2,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101482,7 +101483,8 @@
       "duration_seconds": 6127.199,
       "gap_to_leader_seconds": 0.895,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101491,9 +101493,9 @@
       "name_acronym": "RUS",
       "team_name": "Mercedes",
       "team_colour": "27F4D2",
-      "grid_position": null,
+      "grid_position": 4,
       "final_position": 3,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101501,7 +101503,8 @@
       "duration_seconds": 6134.785,
       "gap_to_leader_seconds": 8.481,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101510,9 +101513,9 @@
       "name_acronym": "ANT",
       "team_name": "Mercedes",
       "team_colour": "27F4D2",
-      "grid_position": null,
+      "grid_position": 16,
       "final_position": 4,
-      "positions_gained": null,
+      "positions_gained": 12,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101520,7 +101523,8 @@
       "duration_seconds": 6136.439,
       "gap_to_leader_seconds": 10.135,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101529,9 +101533,9 @@
       "name_acronym": "ALB",
       "team_name": "Williams",
       "team_colour": "64C4FF",
-      "grid_position": null,
+      "grid_position": 6,
       "final_position": 5,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101539,7 +101543,8 @@
       "duration_seconds": 6139.077,
       "gap_to_leader_seconds": 12.773,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101548,9 +101553,9 @@
       "name_acronym": "STR",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 13,
       "final_position": 6,
-      "positions_gained": null,
+      "positions_gained": 7,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101558,7 +101563,8 @@
       "duration_seconds": 6143.717,
       "gap_to_leader_seconds": 17.413,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101567,9 +101573,9 @@
       "name_acronym": "HUL",
       "team_name": "Kick Sauber",
       "team_colour": "52E252",
-      "grid_position": null,
+      "grid_position": 17,
       "final_position": 7,
-      "positions_gained": null,
+      "positions_gained": 10,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101577,7 +101583,8 @@
       "duration_seconds": 6144.727,
       "gap_to_leader_seconds": 18.423,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101586,9 +101593,9 @@
       "name_acronym": "LEC",
       "team_name": "Ferrari",
       "team_colour": "E80020",
-      "grid_position": null,
+      "grid_position": 7,
       "final_position": 8,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101596,7 +101603,8 @@
       "duration_seconds": 6146.13,
       "gap_to_leader_seconds": 19.826,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101605,9 +101613,9 @@
       "name_acronym": "PIA",
       "team_name": "McLaren",
       "team_colour": "FF8000",
-      "grid_position": null,
+      "grid_position": 2,
       "final_position": 9,
-      "positions_gained": null,
+      "positions_gained": -7,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101615,7 +101623,8 @@
       "duration_seconds": 6146.752,
       "gap_to_leader_seconds": 20.448,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101624,9 +101633,9 @@
       "name_acronym": "HAM",
       "team_name": "Ferrari",
       "team_colour": "E80020",
-      "grid_position": null,
+      "grid_position": 8,
       "final_position": 10,
-      "positions_gained": null,
+      "positions_gained": -2,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101634,7 +101643,8 @@
       "duration_seconds": 6148.777,
       "gap_to_leader_seconds": 22.473,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101643,9 +101653,9 @@
       "name_acronym": "GAS",
       "team_name": "Alpine",
       "team_colour": "0093CC",
-      "grid_position": null,
+      "grid_position": 9,
       "final_position": 11,
-      "positions_gained": null,
+      "positions_gained": -2,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101653,7 +101663,8 @@
       "duration_seconds": 6152.806,
       "gap_to_leader_seconds": 26.502,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101662,9 +101673,9 @@
       "name_acronym": "TSU",
       "team_name": "Racing Bulls",
       "team_colour": "6692FF",
-      "grid_position": null,
+      "grid_position": 5,
       "final_position": 12,
-      "positions_gained": null,
+      "positions_gained": -7,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101672,7 +101683,8 @@
       "duration_seconds": 6156.188,
       "gap_to_leader_seconds": 29.884,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101681,9 +101693,9 @@
       "name_acronym": "OCO",
       "team_name": "Haas F1 Team",
       "team_colour": "B6BABD",
-      "grid_position": null,
+      "grid_position": 19,
       "final_position": 13,
-      "positions_gained": null,
+      "positions_gained": 6,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101691,7 +101703,8 @@
       "duration_seconds": 6159.465,
       "gap_to_leader_seconds": 33.161,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101700,9 +101713,9 @@
       "name_acronym": "BEA",
       "team_name": "Haas F1 Team",
       "team_colour": "B6BABD",
-      "grid_position": null,
+      "grid_position": 20,
       "final_position": 14,
-      "positions_gained": null,
+      "positions_gained": 6,
       "status": "Finished",
       "total_pit_stops": 5,
       "number_of_laps": 57,
@@ -101710,7 +101723,8 @@
       "duration_seconds": 6166.655,
       "gap_to_leader_seconds": 40.351,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101719,7 +101733,7 @@
       "name_acronym": "BOR",
       "team_name": "Kick Sauber",
       "team_colour": "52E252",
-      "grid_position": null,
+      "grid_position": 15,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -101729,7 +101743,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101738,7 +101753,7 @@
       "name_acronym": "DOO",
       "team_name": "Alpine",
       "team_colour": "0093CC",
-      "grid_position": null,
+      "grid_position": 14,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -101748,7 +101763,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101757,7 +101773,7 @@
       "name_acronym": "ALO",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 12,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -101767,7 +101783,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101776,7 +101793,7 @@
       "name_acronym": "LAW",
       "team_name": "Red Bull Racing",
       "team_colour": "3671C6",
-      "grid_position": null,
+      "grid_position": 18,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -101786,7 +101803,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101795,7 +101813,7 @@
       "name_acronym": "SAI",
       "team_name": "Williams",
       "team_colour": "64C4FF",
-      "grid_position": null,
+      "grid_position": 10,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -101805,7 +101823,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 9693,
@@ -101814,7 +101833,7 @@
       "name_acronym": "HAD",
       "team_name": "Racing Bulls",
       "team_colour": "6692FF",
-      "grid_position": null,
+      "grid_position": 11,
       "final_position": null,
       "positions_gained": null,
       "status": "DNS",
@@ -101824,7 +101843,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9689
     },
     {
       "session_key": 10014,
@@ -101833,9 +101853,9 @@
       "name_acronym": "PIA",
       "team_name": "McLaren",
       "team_colour": "FF8000",
-      "grid_position": null,
+      "grid_position": 1,
       "final_position": 1,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101843,7 +101863,8 @@
       "duration_seconds": 5739.435,
       "gap_to_leader_seconds": 0.0,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101852,9 +101873,9 @@
       "name_acronym": "RUS",
       "team_name": "Mercedes",
       "team_colour": "27F4D2",
-      "grid_position": null,
+      "grid_position": 3,
       "final_position": 2,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101862,7 +101883,8 @@
       "duration_seconds": 5754.934,
       "gap_to_leader_seconds": 15.499,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101871,9 +101893,9 @@
       "name_acronym": "NOR",
       "team_name": "McLaren",
       "team_colour": "FF8000",
-      "grid_position": null,
+      "grid_position": 6,
       "final_position": 3,
-      "positions_gained": null,
+      "positions_gained": 3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101881,7 +101903,8 @@
       "duration_seconds": 5755.708,
       "gap_to_leader_seconds": 16.273,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101890,9 +101913,9 @@
       "name_acronym": "LEC",
       "team_name": "Ferrari",
       "team_colour": "E80020",
-      "grid_position": null,
+      "grid_position": 2,
       "final_position": 4,
-      "positions_gained": null,
+      "positions_gained": -2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101900,7 +101923,8 @@
       "duration_seconds": 5759.114,
       "gap_to_leader_seconds": 19.679,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101909,9 +101933,9 @@
       "name_acronym": "HAM",
       "team_name": "Ferrari",
       "team_colour": "E80020",
-      "grid_position": null,
+      "grid_position": 9,
       "final_position": 5,
-      "positions_gained": null,
+      "positions_gained": 4,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101919,7 +101943,8 @@
       "duration_seconds": 5767.428,
       "gap_to_leader_seconds": 27.993,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101928,9 +101953,9 @@
       "name_acronym": "VER",
       "team_name": "Red Bull Racing",
       "team_colour": "3671C6",
-      "grid_position": null,
+      "grid_position": 7,
       "final_position": 6,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101938,7 +101963,8 @@
       "duration_seconds": 5773.83,
       "gap_to_leader_seconds": 34.395,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101947,9 +101973,9 @@
       "name_acronym": "GAS",
       "team_name": "Alpine",
       "team_colour": "0093CC",
-      "grid_position": null,
+      "grid_position": 4,
       "final_position": 7,
-      "positions_gained": null,
+      "positions_gained": -3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101957,7 +101983,8 @@
       "duration_seconds": 5775.437,
       "gap_to_leader_seconds": 36.002,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101966,9 +101993,9 @@
       "name_acronym": "OCO",
       "team_name": "Haas F1 Team",
       "team_colour": "B6BABD",
-      "grid_position": null,
+      "grid_position": 14,
       "final_position": 8,
-      "positions_gained": null,
+      "positions_gained": 6,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101976,7 +102003,8 @@
       "duration_seconds": 5783.679,
       "gap_to_leader_seconds": 44.244,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -101985,9 +102013,9 @@
       "name_acronym": "TSU",
       "team_name": "Red Bull Racing",
       "team_colour": "3671C6",
-      "grid_position": null,
+      "grid_position": 10,
       "final_position": 9,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -101995,7 +102023,8 @@
       "duration_seconds": 5784.496,
       "gap_to_leader_seconds": 45.061,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102004,9 +102033,9 @@
       "name_acronym": "BEA",
       "team_name": "Haas F1 Team",
       "team_colour": "B6BABD",
-      "grid_position": null,
+      "grid_position": 20,
       "final_position": 10,
-      "positions_gained": null,
+      "positions_gained": 10,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102014,7 +102043,8 @@
       "duration_seconds": 5787.029,
       "gap_to_leader_seconds": 47.594,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102023,9 +102053,9 @@
       "name_acronym": "ANT",
       "team_name": "Mercedes",
       "team_colour": "27F4D2",
-      "grid_position": null,
+      "grid_position": 5,
       "final_position": 11,
-      "positions_gained": null,
+      "positions_gained": -6,
       "status": "Finished",
       "total_pit_stops": 3,
       "number_of_laps": 57,
@@ -102033,7 +102063,8 @@
       "duration_seconds": 5787.451,
       "gap_to_leader_seconds": 48.016,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102042,9 +102073,9 @@
       "name_acronym": "ALB",
       "team_name": "Williams",
       "team_colour": "64C4FF",
-      "grid_position": null,
+      "grid_position": 15,
       "final_position": 12,
-      "positions_gained": null,
+      "positions_gained": 3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102052,7 +102083,8 @@
       "duration_seconds": 5788.274,
       "gap_to_leader_seconds": 48.839,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102061,9 +102093,9 @@
       "name_acronym": "HAD",
       "team_name": "Racing Bulls",
       "team_colour": "6692FF",
-      "grid_position": null,
+      "grid_position": 12,
       "final_position": 13,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102071,7 +102103,8 @@
       "duration_seconds": 5795.749,
       "gap_to_leader_seconds": 56.314,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102080,9 +102113,9 @@
       "name_acronym": "DOO",
       "team_name": "Alpine",
       "team_colour": "0093CC",
-      "grid_position": null,
+      "grid_position": 11,
       "final_position": 14,
-      "positions_gained": null,
+      "positions_gained": -3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102090,7 +102123,8 @@
       "duration_seconds": 5797.241,
       "gap_to_leader_seconds": 57.806,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102099,9 +102133,9 @@
       "name_acronym": "ALO",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 13,
       "final_position": 15,
-      "positions_gained": null,
+      "positions_gained": -2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102109,7 +102143,8 @@
       "duration_seconds": 5799.775,
       "gap_to_leader_seconds": 60.34,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102118,9 +102153,9 @@
       "name_acronym": "LAW",
       "team_name": "Racing Bulls",
       "team_colour": "6692FF",
-      "grid_position": null,
+      "grid_position": 17,
       "final_position": 16,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102128,7 +102163,8 @@
       "duration_seconds": 5803.87,
       "gap_to_leader_seconds": 64.435,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102137,9 +102173,9 @@
       "name_acronym": "STR",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 19,
       "final_position": 17,
-      "positions_gained": null,
+      "positions_gained": 2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102147,7 +102183,8 @@
       "duration_seconds": 5804.924,
       "gap_to_leader_seconds": 65.489,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102156,9 +102193,9 @@
       "name_acronym": "BOR",
       "team_name": "Kick Sauber",
       "team_colour": "52E252",
-      "grid_position": null,
+      "grid_position": 18,
       "final_position": 18,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -102166,7 +102203,8 @@
       "duration_seconds": 5806.307,
       "gap_to_leader_seconds": 66.872,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102175,7 +102213,7 @@
       "name_acronym": "SAI",
       "team_name": "Williams",
       "team_colour": "64C4FF",
-      "grid_position": null,
+      "grid_position": 8,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102185,7 +102223,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 10014,
@@ -102194,7 +102233,7 @@
       "name_acronym": "HUL",
       "team_name": "Kick Sauber",
       "team_colour": "52E252",
-      "grid_position": null,
+      "grid_position": 16,
       "final_position": null,
       "positions_gained": null,
       "status": "DSQ",
@@ -102204,7 +102243,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 10010
     },
     {
       "session_key": 9979,
@@ -102213,9 +102253,9 @@
       "name_acronym": "NOR",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 1,
       "final_position": 1,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 78,
@@ -102223,7 +102263,8 @@
       "duration_seconds": 6033.843,
       "gap_to_leader_seconds": 0.0,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102232,9 +102273,9 @@
       "name_acronym": "LEC",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 2,
       "final_position": 2,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 78,
@@ -102242,7 +102283,8 @@
       "duration_seconds": 6036.974,
       "gap_to_leader_seconds": 3.131,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102251,9 +102293,9 @@
       "name_acronym": "PIA",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 3,
       "final_position": 3,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 78,
@@ -102261,7 +102303,8 @@
       "duration_seconds": 6037.501,
       "gap_to_leader_seconds": 3.658,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102270,9 +102313,9 @@
       "name_acronym": "VER",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 4,
       "final_position": 4,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 78,
@@ -102280,7 +102323,8 @@
       "duration_seconds": 6054.415,
       "gap_to_leader_seconds": 20.572,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102289,9 +102333,9 @@
       "name_acronym": "HAM",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 7,
       "final_position": 5,
-      "positions_gained": null,
+      "positions_gained": 2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 78,
@@ -102299,7 +102343,8 @@
       "duration_seconds": 6085.23,
       "gap_to_leader_seconds": 51.387,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102308,9 +102353,9 @@
       "name_acronym": "HAD",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 5,
       "final_position": 6,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 77,
@@ -102318,7 +102363,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102327,9 +102373,9 @@
       "name_acronym": "OCO",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 8,
       "final_position": 7,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 77,
@@ -102337,7 +102383,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102346,9 +102393,9 @@
       "name_acronym": "LAW",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 9,
       "final_position": 8,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 77,
@@ -102356,7 +102403,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102365,9 +102413,9 @@
       "name_acronym": "ALB",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 10,
       "final_position": 9,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102375,7 +102423,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102384,9 +102433,9 @@
       "name_acronym": "SAI",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 11,
       "final_position": 10,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102394,7 +102443,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102403,9 +102453,9 @@
       "name_acronym": "RUS",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 14,
       "final_position": 11,
-      "positions_gained": null,
+      "positions_gained": 3,
       "status": "Finished",
       "total_pit_stops": 3,
       "number_of_laps": 76,
@@ -102413,7 +102463,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102422,9 +102473,9 @@
       "name_acronym": "BEA",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 20,
       "final_position": 12,
-      "positions_gained": null,
+      "positions_gained": 8,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102432,7 +102483,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102441,9 +102493,9 @@
       "name_acronym": "COL",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 18,
       "final_position": 13,
-      "positions_gained": null,
+      "positions_gained": 5,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102451,7 +102503,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102460,9 +102513,9 @@
       "name_acronym": "BOR",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 16,
       "final_position": 14,
-      "positions_gained": null,
+      "positions_gained": 2,
       "status": "Finished",
       "total_pit_stops": 3,
       "number_of_laps": 76,
@@ -102470,7 +102523,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102479,9 +102533,9 @@
       "name_acronym": "STR",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 19,
       "final_position": 15,
-      "positions_gained": null,
+      "positions_gained": 4,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102489,7 +102543,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102498,9 +102553,9 @@
       "name_acronym": "HUL",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 13,
       "final_position": 16,
-      "positions_gained": null,
+      "positions_gained": -3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102508,7 +102563,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102517,9 +102573,9 @@
       "name_acronym": "TSU",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 12,
       "final_position": 17,
-      "positions_gained": null,
+      "positions_gained": -5,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 76,
@@ -102527,7 +102583,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 2,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102536,9 +102593,9 @@
       "name_acronym": "ANT",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 15,
       "final_position": 18,
-      "positions_gained": null,
+      "positions_gained": -3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 75,
@@ -102546,7 +102603,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 3,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102555,7 +102613,7 @@
       "name_acronym": "GAS",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 17,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102565,7 +102623,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9979,
@@ -102574,7 +102633,7 @@
       "name_acronym": "ALO",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 6,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102584,7 +102643,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9975
     },
     {
       "session_key": 9947,
@@ -102593,9 +102653,9 @@
       "name_acronym": "NOR",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 3,
       "final_position": 1,
-      "positions_gained": null,
+      "positions_gained": 2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102603,7 +102663,8 @@
       "duration_seconds": 5835.735,
       "gap_to_leader_seconds": 0.0,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102612,9 +102673,9 @@
       "name_acronym": "PIA",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 2,
       "final_position": 2,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102622,7 +102683,8 @@
       "duration_seconds": 5842.547,
       "gap_to_leader_seconds": 6.812,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102631,9 +102693,9 @@
       "name_acronym": "HUL",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 19,
       "final_position": 3,
-      "positions_gained": null,
+      "positions_gained": 16,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102641,7 +102703,8 @@
       "duration_seconds": 5870.477,
       "gap_to_leader_seconds": 34.742,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102650,9 +102713,9 @@
       "name_acronym": "HAM",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 5,
       "final_position": 4,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102660,7 +102723,8 @@
       "duration_seconds": 5875.547,
       "gap_to_leader_seconds": 39.812,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102669,9 +102733,9 @@
       "name_acronym": "VER",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 1,
       "final_position": 5,
-      "positions_gained": null,
+      "positions_gained": -4,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102679,7 +102743,8 @@
       "duration_seconds": 5892.516,
       "gap_to_leader_seconds": 56.781,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102688,9 +102753,9 @@
       "name_acronym": "GAS",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 8,
       "final_position": 6,
-      "positions_gained": null,
+      "positions_gained": 2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102698,7 +102763,8 @@
       "duration_seconds": 5895.592,
       "gap_to_leader_seconds": 59.857,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102707,9 +102773,9 @@
       "name_acronym": "STR",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 17,
       "final_position": 7,
-      "positions_gained": null,
+      "positions_gained": 10,
       "status": "Finished",
       "total_pit_stops": 3,
       "number_of_laps": 52,
@@ -102717,7 +102783,8 @@
       "duration_seconds": 5896.338,
       "gap_to_leader_seconds": 60.603,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102726,9 +102793,9 @@
       "name_acronym": "ALB",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 13,
       "final_position": 8,
-      "positions_gained": null,
+      "positions_gained": 5,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102736,7 +102803,8 @@
       "duration_seconds": 5899.87,
       "gap_to_leader_seconds": 64.135,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102745,9 +102813,9 @@
       "name_acronym": "ALO",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 7,
       "final_position": 9,
-      "positions_gained": null,
+      "positions_gained": -2,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102755,7 +102823,8 @@
       "duration_seconds": 5901.593,
       "gap_to_leader_seconds": 65.858,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102764,9 +102833,9 @@
       "name_acronym": "RUS",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 4,
       "final_position": 10,
-      "positions_gained": null,
+      "positions_gained": -6,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102774,7 +102843,8 @@
       "duration_seconds": 5906.409,
       "gap_to_leader_seconds": 70.674,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102783,9 +102853,9 @@
       "name_acronym": "BEA",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 18,
       "final_position": 11,
-      "positions_gained": null,
+      "positions_gained": 7,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102793,7 +102863,8 @@
       "duration_seconds": 5907.83,
       "gap_to_leader_seconds": 72.095,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102802,9 +102873,9 @@
       "name_acronym": "SAI",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 9,
       "final_position": 12,
-      "positions_gained": null,
+      "positions_gained": -3,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102812,7 +102883,8 @@
       "duration_seconds": 5912.327,
       "gap_to_leader_seconds": 76.592,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102821,9 +102893,9 @@
       "name_acronym": "OCO",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 14,
       "final_position": 13,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102831,7 +102903,8 @@
       "duration_seconds": 5913.036,
       "gap_to_leader_seconds": 77.301,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102840,9 +102913,9 @@
       "name_acronym": "LEC",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 6,
       "final_position": 14,
-      "positions_gained": null,
+      "positions_gained": -8,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 52,
@@ -102850,7 +102923,8 @@
       "duration_seconds": 5920.212,
       "gap_to_leader_seconds": 84.477,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102859,9 +102933,9 @@
       "name_acronym": "TSU",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 11,
       "final_position": 15,
-      "positions_gained": null,
+      "positions_gained": -4,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 51,
@@ -102869,7 +102943,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102878,7 +102953,7 @@
       "name_acronym": "BOR",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 16,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102888,7 +102963,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102897,7 +102973,7 @@
       "name_acronym": "HAD",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 12,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102907,7 +102983,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102916,7 +102993,7 @@
       "name_acronym": "ANT",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 10,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102926,7 +103003,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102935,7 +103013,7 @@
       "name_acronym": "LAW",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 15,
       "final_position": null,
       "positions_gained": null,
       "status": "DNF",
@@ -102945,7 +103023,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9947,
@@ -102954,7 +103033,7 @@
       "name_acronym": "COL",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 20,
       "final_position": null,
       "positions_gained": null,
       "status": "DNS",
@@ -102964,7 +103043,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9943
     },
     {
       "session_key": 9839,
@@ -102973,9 +103053,9 @@
       "name_acronym": "VER",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 1,
       "final_position": 1,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -102983,7 +103063,8 @@
       "duration_seconds": 5167.469,
       "gap_to_leader_seconds": 0.0,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -102992,9 +103073,9 @@
       "name_acronym": "PIA",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 3,
       "final_position": 2,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103002,7 +103083,8 @@
       "duration_seconds": 5180.063,
       "gap_to_leader_seconds": 12.594,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103011,9 +103093,9 @@
       "name_acronym": "NOR",
       "team_name": "McLaren",
       "team_colour": "F47600",
-      "grid_position": null,
+      "grid_position": 2,
       "final_position": 3,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 58,
@@ -103021,7 +103103,8 @@
       "duration_seconds": 5184.041,
       "gap_to_leader_seconds": 16.572,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103030,9 +103113,9 @@
       "name_acronym": "LEC",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 5,
       "final_position": 4,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 58,
@@ -103040,7 +103123,8 @@
       "duration_seconds": 5190.748,
       "gap_to_leader_seconds": 23.279,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103049,9 +103133,9 @@
       "name_acronym": "RUS",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 4,
       "final_position": 5,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103059,7 +103143,8 @@
       "duration_seconds": 5216.032,
       "gap_to_leader_seconds": 48.563,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103068,9 +103153,9 @@
       "name_acronym": "ALO",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 6,
       "final_position": 6,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103078,7 +103163,8 @@
       "duration_seconds": 5235.031,
       "gap_to_leader_seconds": 67.562,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103087,9 +103173,9 @@
       "name_acronym": "OCO",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 8,
       "final_position": 7,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103097,7 +103183,8 @@
       "duration_seconds": 5237.345,
       "gap_to_leader_seconds": 69.876,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103106,9 +103193,9 @@
       "name_acronym": "HAM",
       "team_name": "Ferrari",
       "team_colour": "ED1131",
-      "grid_position": null,
+      "grid_position": 16,
       "final_position": 8,
-      "positions_gained": null,
+      "positions_gained": 8,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 58,
@@ -103116,7 +103203,8 @@
       "duration_seconds": 5240.139,
       "gap_to_leader_seconds": 72.67,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103125,9 +103213,9 @@
       "name_acronym": "HUL",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 18,
       "final_position": 9,
-      "positions_gained": null,
+      "positions_gained": 9,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 58,
@@ -103135,7 +103223,8 @@
       "duration_seconds": 5246.483,
       "gap_to_leader_seconds": 79.014,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103144,9 +103233,9 @@
       "name_acronym": "STR",
       "team_name": "Aston Martin",
       "team_colour": "229971",
-      "grid_position": null,
+      "grid_position": 15,
       "final_position": 10,
-      "positions_gained": null,
+      "positions_gained": 5,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103154,7 +103243,8 @@
       "duration_seconds": 5246.992,
       "gap_to_leader_seconds": 79.523,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103163,9 +103253,9 @@
       "name_acronym": "BOR",
       "team_name": "Kick Sauber",
       "team_colour": "01C00E",
-      "grid_position": null,
+      "grid_position": 7,
       "final_position": 11,
-      "positions_gained": null,
+      "positions_gained": -4,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103173,7 +103263,8 @@
       "duration_seconds": 5248.512,
       "gap_to_leader_seconds": 81.043,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103182,9 +103273,9 @@
       "name_acronym": "BEA",
       "team_name": "Haas F1 Team",
       "team_colour": "9C9FA2",
-      "grid_position": null,
+      "grid_position": 11,
       "final_position": 12,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103192,7 +103283,8 @@
       "duration_seconds": 5248.635,
       "gap_to_leader_seconds": 81.166,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103201,9 +103293,9 @@
       "name_acronym": "SAI",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 12,
       "final_position": 13,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103211,7 +103303,8 @@
       "duration_seconds": 5249.627,
       "gap_to_leader_seconds": 82.158,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103220,9 +103313,9 @@
       "name_acronym": "TSU",
       "team_name": "Red Bull Racing",
       "team_colour": "4781D7",
-      "grid_position": null,
+      "grid_position": 10,
       "final_position": 14,
-      "positions_gained": null,
+      "positions_gained": -4,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103230,7 +103323,8 @@
       "duration_seconds": 5251.263,
       "gap_to_leader_seconds": 83.794,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103239,9 +103333,9 @@
       "name_acronym": "ANT",
       "team_name": "Mercedes",
       "team_colour": "00D7B6",
-      "grid_position": null,
+      "grid_position": 14,
       "final_position": 15,
-      "positions_gained": null,
+      "positions_gained": -1,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 58,
@@ -103249,7 +103343,8 @@
       "duration_seconds": 5251.868,
       "gap_to_leader_seconds": 84.399,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103258,9 +103353,9 @@
       "name_acronym": "ALB",
       "team_name": "Williams",
       "team_colour": "1868DB",
-      "grid_position": null,
+      "grid_position": 17,
       "final_position": 16,
-      "positions_gained": null,
+      "positions_gained": 1,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 58,
@@ -103268,7 +103363,8 @@
       "duration_seconds": 5257.796,
       "gap_to_leader_seconds": 90.327,
       "laps_down": null,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103277,9 +103373,9 @@
       "name_acronym": "HAD",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 9,
       "final_position": 17,
-      "positions_gained": null,
+      "positions_gained": -8,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 57,
@@ -103287,7 +103383,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103296,9 +103393,9 @@
       "name_acronym": "LAW",
       "team_name": "Racing Bulls",
       "team_colour": "6C98FF",
-      "grid_position": null,
+      "grid_position": 13,
       "final_position": 18,
-      "positions_gained": null,
+      "positions_gained": -5,
       "status": "Finished",
       "total_pit_stops": 1,
       "number_of_laps": 57,
@@ -103306,7 +103403,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103315,9 +103413,9 @@
       "name_acronym": "GAS",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 19,
       "final_position": 19,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -103325,7 +103423,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     },
     {
       "session_key": 9839,
@@ -103334,9 +103433,9 @@
       "name_acronym": "COL",
       "team_name": "Alpine",
       "team_colour": "00A1E8",
-      "grid_position": null,
+      "grid_position": 20,
       "final_position": 20,
-      "positions_gained": null,
+      "positions_gained": 0,
       "status": "Finished",
       "total_pit_stops": 2,
       "number_of_laps": 57,
@@ -103344,7 +103443,8 @@
       "duration_seconds": null,
       "gap_to_leader_seconds": null,
       "laps_down": 1,
-      "grid_position_missing": true
+      "grid_position_missing": false,
+      "grid_source_session_key": 9835
     }
   ],
   "meta": {
@@ -103357,7 +103457,12 @@
       9839
     ],
     "races_with_grid": [
-      9472
+      9472,
+      9693,
+      9839,
+      9947,
+      9979,
+      10014
     ]
   }
 }

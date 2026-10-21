@@ -339,3 +339,30 @@ def test_resolve_qualifying_session_zero_or_multiple_matches_returns_none():
     with _make_client() as client:
         assert resolve_qualifying_session(client, 9502) is None
 
+
+@resp_lib.activate
+def test_resolve_qualifying_session_missing_race_or_meeting_key():
+    """Missing race session or null meeting_key gracefully returns None."""
+    from ingestion.openf1_client import resolve_qualifying_session
+
+    # 1. Race session not found
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[],
+        status=200,
+    )
+    with _make_client() as client:
+        assert resolve_qualifying_session(client, 9999) is None
+
+    # 2. Race session has no meeting_key
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9998, "meeting_key": None, "session_name": "Race"}],
+        status=200,
+    )
+    with _make_client() as client:
+        assert resolve_qualifying_session(client, 9998) is None
+
+

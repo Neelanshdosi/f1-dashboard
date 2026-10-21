@@ -98,22 +98,18 @@ Driver status in `agg_race_results` is evaluated strictly in the following order
 #### OpenF1 Starting Grid Endpoint Coverage & Resolution
 The OpenF1 beta endpoint `/v1/starting_grid` keys grid data to the **Qualifying** session of a race weekend rather than the Race session. Direct queries with a Race `session_key` return HTTP 404 (`{"detail":"No results found."}`). The ingestion pipeline and dashboard refresh resolve the corresponding Qualifying session (`session_name == "Qualifying"`) via `/v1/sessions?meeting_key=<M>&session_name=Qualifying`, fetch the starting grid under that qualifying session key, and rewrite records to the race `session_key` while recording `grid_source_session_key`.
 
-| Race Session Key | Qualifying Session Key | Year | Meeting / Grand Prix | HTTP Status | Starting Grid Rows |
-|---|---|---|---|---|---:|
-| `9472` | `9468` | 2024 | Bahrain Grand Prix | 200 | 20 |
-| `9662` | `9658` | 2024 | Abu Dhabi Grand Prix | 200 | 20 |
-| `9693` | None | 2025 | Australian Grand Prix | N/A (Missing) | 0 |
-| `9947` | None | 2025 | British Grand Prix | N/A (Missing) | 0 |
-| `9979` | None | 2025 | Monaco Grand Prix | N/A (Missing) | 0 |
-| `10014` | None | 2025 | Bahrain Grand Prix | N/A (Missing) | 0 |
-| `9839` | None | 2025 | Abu Dhabi Grand Prix | N/A (Missing) | 0 |
+| Race Session Key | Qualifying Session Key | Year | Meeting Key | Session Name | HTTP Status | Starting Grid Rows |
+|---|---|---|---|---|---|---:|
+| `9472` | `9468` | 2024 | 1229 | Race | 200 | 20 |
+| `9662` | `9658` | 2024 | 1252 | Race | 200 | 20 |
+| `9693` | `9689` | 2025 | 1254 | Race | 200 | 20 |
+| `9839` | `9835` | 2025 | 1276 | Race | 200 | 20 |
+| `9947` | `9943` | 2025 | 1277 | Race | 200 | 20 |
+| `9979` | `9975` | 2025 | 1261 | Race | 200 | 20 |
+| `10014` | `10010` | 2025 | 1257 | Race | 200 | 20 |
 
-> **Starting Grid Penalties Verification**:
-> Verified against official FIA starting grid and qualifying classification for session 9662 (2024 Abu Dhabi Grand Prix, Qualifying session 9658):
-> - Nico Hülkenberg qualified P4 (82.748s), but received a 3-place grid penalty; `/v1/starting_grid` correctly reflects `position: 7`.
-> - Charles Leclerc qualified P14 (83.152s), but received a 10-place grid penalty for replacing energy store components; `/v1/starting_grid` correctly reflects `position: 19`.
-> - Max Verstappen (qualified P5 -> starts P4), Pierre Gasly (qualified P6 -> starts P5), and George Russell (qualified P7 -> starts P6) all moved up accordingly.
-> **Finding**: OpenF1 `/v1/starting_grid` positions **include post-qualifying grid penalties**.
+> **Starting Grid Penalties Note**:
+> OpenF1 grid positions may differ from qualifying order; whether they include penalties was observed on one race and is not otherwise verified.
 
 ## Data quality
 
