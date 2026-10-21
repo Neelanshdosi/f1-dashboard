@@ -82,9 +82,34 @@ The DDL range partitions each table on `session_key` using `RANGE_BUCKET(session
 
 ## Data quality
 
-Silver jobs cast fields to their expected types and remove duplicates: sessions by `session_key`; drivers by session and driver; stints by session, driver, and stint; laps, pit stops, weather, and car data by their session/driver/lap or timestamp keys. Invalid lap-duration strings cast to null, and missing pit-out flags default to false. Some optional source fields receive null or empty defaults.
+The pipeline uses a **Quarantine Pattern** to validate incoming records against business rules and domain bounds defined in `config.yaml`, routing anomalies into a dedicated quarantine store rather than letting them corrupt downstream analytics or silently fail jobs:
 
-There is no rejected-records table or general non-null-key validation in the current pipeline. Invalid lap durations are not routed to a quarantine table.
+1. **Validation & Quarantine**:
+   - Incoming records are validated for non-null key constraints (`session_key`, `driver_number`, `lap_number`, `stint_number`, `date_utc`), valid timestamp parsing, and realistic physical bounds:
+     - Lap times: `lap_time_min_seconds` (50.0s) to `lap_time_max_seconds` (300.0s).
+     - Stints: `stint_lap_min` (>= 1) and `lap_end >= lap_start`.
+     - Pit stops: `pit_duration_min_seconds` (5.0s) to `pit_duration_max_seconds` (300.0s).
+     - Weather: `track_temp_min` (0.0°C) to `track_temp_max` (85.0°C); `air_temp_min` (0.0°C) to `air_temp_max` (60.0°C).
+   - Valid records proceed down the standard Silver Parquet transformation path.
+   - Faulty records are quarantined to `gs://${GCS_BUCKET}/silver/rejected_records/season=<season>/session_key=<session>/` with the following schema:
+     - `source_table` (STRING): Name of the source entity (e.g., `fct_laps`).
+     - `reject_reason` (STRING): Categorical reason for quarantine (e.g., `null_driver_number`, `lap_time_out_of_range`, `invalid_stint_laps`, `pit_duration_out_of_range`, `invalid_timestamp`).
+     - `raw_record` (STRING): Full original record serialized as a JSON string for auditing and reprocessing.
+     - `session_key` (INT): Session identifier.
+     - `rejected_at` (TIMESTAMP): UTC timestamp when the record was rejected.
+
+2. **Pipeline Run Audit**:
+   - Both `bronze_to_silver` and `silver_to_gold` log execution metrics to BigQuery table `f1_analytics.pipeline_run_audit` (or append to a local JSON-lines file `pipeline_run_audit.jsonl` when running locally with `file://`):
+     - `job_name` (STRING): `bronze_to_silver` or `silver_to_gold`.
+     - `session_key` (INT64): Target session key.
+     - `season` (INT64): Target championship season year.
+     - `table_name` (STRING): Target table being processed.
+     - `rows_in` (INT64): Count of records read into the transformation.
+     - `rows_out` (INT64): Count of clean records output.
+     - `rows_rejected` (INT64): Count of records quarantined.
+     - `started_at` (TIMESTAMP): Run start time.
+     - `duration_seconds` (FLOAT64): Step processing duration in seconds.
+     - `status` (STRING): Execution status (`SUCCESS` or `FAILED`).
 
 ## Scale
 

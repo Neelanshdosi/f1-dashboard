@@ -79,3 +79,19 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_weather_impact` (
 )
 PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY session_key;
+
+
+-- 5. Pipeline Run Audit Log
+CREATE TABLE IF NOT EXISTS `f1_analytics.pipeline_run_audit` (
+    job_name STRING,
+    session_key INT64,
+    season INT64,
+    table_name STRING,
+    rows_in INT64,
+    rows_out INT64,
+    rows_rejected INT64,
+    started_at TIMESTAMP,
+    duration_seconds FLOAT64,
+    status STRING
+);
+

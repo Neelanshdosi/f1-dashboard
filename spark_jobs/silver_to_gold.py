@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from datetime import UTC
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -380,6 +381,12 @@ def run_pipeline(
     season: int = 2024,
     base_uri: str | None = None,
 ) -> dict[str, int]:
+    import time
+    from datetime import datetime
+
+    start_time = time.time()
+    started_at = datetime.now(UTC)
+
     base = _resolve_base_uri(base_uri)
     is_local = base.startswith("file://")
     print(f"Running Silver to Gold pipeline with base URI: {base} (session={session_key}, season={season})")
@@ -397,9 +404,11 @@ def run_pipeline(
         bq_client = bigquery.Client(project=project_id)
         # Ensure dataset and tables exist
         ensure_gold_tables(bq_client, project_id)
+        ensure_audit_table(bq_client, project_id)
 
     spark = get_spark_session()
     counts: dict[str, int] = {}
+    audit_rows: list[dict] = []
 
     # Step 1: Read Silver Parquet tables with Spark
     print(f"\n--- Reading Silver Parquet files for session={session_key} ---")
@@ -422,8 +431,9 @@ def run_pipeline(
     print("\n--- Computing Gold Race Strategy Aggregations ---")
 
     # Helper function to write Gold table and load to BigQuery
-    def _process_gold_table(df: DataFrame, table_name: str) -> int:
-        return _write_and_load_gold(
+    def _process_gold_table(df: DataFrame, table_name: str, rows_in: int) -> int:
+        step_start = time.time()
+        count = _write_and_load_gold(
             bq_client=bq_client,
             df=df,
             table_name=table_name,
@@ -433,6 +443,21 @@ def run_pipeline(
             project_id=project_id,
             is_local=is_local,
         )
+        audit_rows.append(
+            build_audit_row(
+                job_name="silver_to_gold",
+                session_key=session_key,
+                season=season,
+                table_name=table_name,
+                rows_in=rows_in,
+                rows_out=count,
+                rows_rejected=0,
+                started_at=started_at,
+                duration_seconds=round(time.time() - step_start, 3),
+                status="SUCCESS",
+            )
+        )
+        return count
 
     # 1. agg_driver_race_summary
     if all(k in silver_dfs for k in ["fct_laps", "dim_drivers", "fct_stints", "fct_pit"]):
@@ -443,7 +468,7 @@ def run_pipeline(
             silver_dfs["fct_pit"],
         )
         counts["agg_driver_race_summary"] = _process_gold_table(
-            summary_df, "agg_driver_race_summary"
+            summary_df, "agg_driver_race_summary", silver_dfs["fct_laps"].count()
         )
 
     # 2. agg_tyre_degradation
@@ -454,7 +479,7 @@ def run_pipeline(
             silver_dfs["fct_stints"],
         )
         counts["agg_tyre_degradation"] = _process_gold_table(
-            deg_df, "agg_tyre_degradation"
+            deg_df, "agg_tyre_degradation", silver_dfs["fct_laps"].count()
         )
 
     # 3. agg_pit_strategy
@@ -465,7 +490,7 @@ def run_pipeline(
             silver_dfs["dim_drivers"],
         )
         counts["agg_pit_strategy"] = _process_gold_table(
-            pit_strat_df, "agg_pit_strategy"
+            pit_strat_df, "agg_pit_strategy", silver_dfs["fct_stints"].count()
         )
 
     # 4. agg_weather_impact
@@ -475,8 +500,19 @@ def run_pipeline(
             silver_dfs["fct_laps"],
         )
         counts["agg_weather_impact"] = _process_gold_table(
-            weather_df, "agg_weather_impact"
+            weather_df, "agg_weather_impact", silver_dfs["fct_weather"].count()
         )
+
+    # Record run audit
+    _record_audit_log(
+        base=base,
+        job_name="silver_to_gold",
+        session_key=session_key,
+        season=season,
+        audit_rows=audit_rows,
+        is_local=is_local,
+        project_id=project_id,
+    )
 
     print("\n" + "=" * 52)
     print("  F1 Gold Aggregation - Phase 3 Summary")
@@ -488,6 +524,7 @@ def run_pipeline(
         print(f"  {tbl:<26} {cnt:>12,}")
     print("-" * 52)
     print(f"  {'TOTAL':<26} {sum(counts.values()):>12,}")
+    print(f"  Total Duration: {time.time() - start_time:.2f}s")
     print("=" * 52 + "\n")
 
     return counts
@@ -550,6 +587,113 @@ GOLD_TABLE_SCHEMAS = {
         ("field_avg_lap_time", "FLOAT64"),
     ],
 }
+
+
+AUDIT_TABLE_SCHEMA = [
+    ("job_name", "STRING"),
+    ("session_key", "INT64"),
+    ("season", "INT64"),
+    ("table_name", "STRING"),
+    ("rows_in", "INT64"),
+    ("rows_out", "INT64"),
+    ("rows_rejected", "INT64"),
+    ("started_at", "TIMESTAMP"),
+    ("duration_seconds", "FLOAT64"),
+    ("status", "STRING"),
+]
+
+
+def build_audit_row(
+    job_name: str,
+    session_key: int,
+    season: int,
+    table_name: str,
+    rows_in: int,
+    rows_out: int,
+    rows_rejected: int = 0,
+    started_at=None,
+    duration_seconds: float = 0.0,
+    status: str = "SUCCESS",
+) -> dict:
+    """Construct a validated dictionary representing an entry in pipeline_run_audit."""
+    from datetime import datetime
+
+    if started_at is None:
+        started_at = datetime.now(UTC)
+
+    started_at_str = started_at.isoformat() if isinstance(started_at, datetime) else str(started_at)
+
+    return {
+        "job_name": str(job_name),
+        "session_key": int(session_key),
+        "season": int(season),
+        "table_name": str(table_name),
+        "rows_in": int(rows_in),
+        "rows_out": int(rows_out),
+        "rows_rejected": int(rows_rejected),
+        "started_at": started_at_str,
+        "duration_seconds": float(duration_seconds),
+        "status": str(status),
+    }
+
+
+def _record_audit_log(
+    base: str,
+    job_name: str,
+    session_key: int,
+    season: int,
+    audit_rows: list[dict],
+    is_local: bool,
+    project_id: str | None = None,
+) -> None:
+    """Write run audit entries to BigQuery or local JSON-lines file."""
+    import json
+    from datetime import datetime
+
+    if not audit_rows:
+        return
+
+    if is_local:
+        from urllib.parse import urlparse
+        from urllib.request import url2pathname
+
+        local_root = Path(url2pathname(urlparse(base).path))
+        audit_file = local_root / "pipeline_run_audit.jsonl"
+        audit_file.parent.mkdir(parents=True, exist_ok=True)
+        with audit_file.open("a", encoding="utf-8") as f:
+            for r in audit_rows:
+                row_copy = dict(r)
+                if isinstance(row_copy.get("started_at"), datetime):
+                    row_copy["started_at"] = row_copy["started_at"].isoformat()
+                f.write(json.dumps(row_copy) + "\n")
+        print(f"  [LOCAL MODE] Appended {len(audit_rows)} audit row(s) to {audit_file}")
+    else:
+        from google.cloud import bigquery
+
+        if not project_id:
+            project_id = os.getenv("GCP_PROJECT_ID")
+        bq_client = bigquery.Client(project=project_id)
+        table_ref = f"{project_id}.f1_analytics.pipeline_run_audit"
+        ensure_audit_table(bq_client, project_id)
+        errors = bq_client.insert_rows_json(table_ref, audit_rows)
+        if errors:
+            print(f"  [WARN] Failed to insert BigQuery audit rows: {errors}")
+        else:
+            print(f"  Inserted {len(audit_rows)} audit row(s) into {table_ref}")
+
+
+def ensure_audit_table(bq_client, project_id: str) -> None:
+    """Ensure pipeline_run_audit table exists in BigQuery."""
+    from google.cloud import bigquery
+
+    dataset_ref = f"{project_id}.f1_analytics"
+    bq_client.create_dataset(bigquery.Dataset(dataset_ref), exists_ok=True)
+    table_ref = f"{dataset_ref}.pipeline_run_audit"
+    table = bigquery.Table(table_ref)
+    table.schema = [
+        bigquery.SchemaField(name, field_type) for name, field_type in AUDIT_TABLE_SCHEMA
+    ]
+    bq_client.create_table(table, exists_ok=True)
 
 
 def _load_bigquery_config() -> dict:
