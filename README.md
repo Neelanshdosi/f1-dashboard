@@ -79,6 +79,7 @@ The DDL range partitions each table on `session_key` using `RANGE_BUCKET(session
 | `agg_tyre_degradation` | `session_key`, `driver_number`, `driver_name`, `team_name`, `stint_number`, `compound`, `tyre_age`, `lap_number`, `lap_time_seconds`, `stint_avg_lap_time`, `delta_to_stint_avg` | `compound`, `driver_number` |
 | `agg_pit_strategy` | `session_key`, `driver_number`, `driver_name`, `team_name`, `stint_number`, `compound`, `lap_start`, `lap_end`, `stint_length`, `pit_lap`, `pit_duration`, `stop_duration` | `driver_number`, `compound` |
 | `agg_weather_impact` | `session_key`, `date_utc`, `air_temperature`, `track_temperature`, `humidity`, `pressure`, `wind_speed`, `wind_direction`, `rainfall`, `field_avg_lap_time` | `session_key` |
+| `agg_driver_telemetry` | `session_key`, `meeting_key`, `driver_number`, `driver_name`, `team_name`, `team_colour`, `max_speed`, `avg_speed`, `avg_throttle`, `full_throttle_pct`, `brake_pct`, `drs_open_pct` | `driver_number` |
 
 ## Data quality
 
@@ -127,6 +128,8 @@ Bronze rows: TODO(owner): fill from GCS.
 Silver rows: TODO(owner): fill from GCS.
 
 `max_sessions_per_season` and `car_data_row_cap` in `config.yaml` are development settings. The commented full-run example removes both caps and includes seasons 2023–2025. The Silver/Gold dashboard refresh contains five selected 2025 races in addition to the existing 2024 Bahrain race.
+
+> **Note**: When `car_data_row_cap` is set, telemetry metrics are computed on a capped sample; set it to null for full-resolution metrics.
 
 ## BigQuery optimization
 

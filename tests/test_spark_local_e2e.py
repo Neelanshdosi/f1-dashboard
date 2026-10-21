@@ -163,6 +163,27 @@ def test_end_to_end_local_spark_pipeline(tmp_path: Path):
         encoding="utf-8",
     )
 
+    # 7. car_data
+    car_data_file = bronze_dir / "car_data" / f"season={season}" / f"session_key={session_key}" / "car_data.json"
+    car_data_file.parent.mkdir(parents=True, exist_ok=True)
+    car_data_file.write_text(
+        json.dumps([
+            {
+                "session_key": session_key,
+                "meeting_key": 1229,
+                "driver_number": 1,
+                "date": "2024-03-02T15:05:00+00:00",
+                "rpm": 11000,
+                "speed": 315,
+                "n_gear": 8,
+                "throttle": 100,
+                "brake": 0,
+                "drs": 12,
+            }
+        ]),
+        encoding="utf-8",
+    )
+
     # Step 1: Run bronze_to_silver with local base-uri
     silver_counts = run_bronze_to_silver(
         session_key=session_key,
@@ -176,9 +197,18 @@ def test_end_to_end_local_spark_pipeline(tmp_path: Path):
     assert silver_counts["fct_laps"] == 2
     assert silver_counts["fct_pit"] == 1
     assert silver_counts["fct_weather"] == 1
+    assert silver_counts["fct_car_data"] == 1
 
     silver_dir = base_dir / "silver"
-    for tbl in ["dim_sessions", "dim_drivers", "fct_stints", "fct_laps", "fct_pit", "fct_weather"]:
+    for tbl in [
+        "dim_sessions",
+        "dim_drivers",
+        "fct_stints",
+        "fct_laps",
+        "fct_pit",
+        "fct_weather",
+        "fct_car_data",
+    ]:
         tbl_path = silver_dir / tbl / f"season={season}" / f"session_key={session_key}"
         assert tbl_path.exists()
         parquet_files = list(tbl_path.glob("*.parquet"))
@@ -195,9 +225,16 @@ def test_end_to_end_local_spark_pipeline(tmp_path: Path):
     assert gold_counts["agg_tyre_degradation"] == 2
     assert gold_counts["agg_pit_strategy"] == 1
     assert gold_counts["agg_weather_impact"] == 1
+    assert gold_counts["agg_driver_telemetry"] == 1
 
     gold_dir = base_dir / "gold"
-    for tbl in ["agg_driver_race_summary", "agg_tyre_degradation", "agg_pit_strategy", "agg_weather_impact"]:
+    for tbl in [
+        "agg_driver_race_summary",
+        "agg_tyre_degradation",
+        "agg_pit_strategy",
+        "agg_weather_impact",
+        "agg_driver_telemetry",
+    ]:
         tbl_path = gold_dir / tbl / f"season={season}" / f"session_key={session_key}"
         assert tbl_path.exists()
         parquet_files = list(tbl_path.glob("*.parquet"))

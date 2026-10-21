@@ -12,6 +12,7 @@ TABLES = (
     "agg_tyre_degradation",
     "agg_pit_strategy",
     "agg_weather_impact",
+    "agg_driver_telemetry",
 )
 
 

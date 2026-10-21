@@ -4,6 +4,7 @@ from pyspark.sql import SparkSession
 
 from spark_jobs.silver_to_gold import (
     compute_driver_race_summary,
+    compute_driver_telemetry,
     compute_pit_strategy,
     compute_tyre_degradation,
     compute_weather_impact,
@@ -98,8 +99,10 @@ def test_gold_aggregations_accept_empty_inputs(spark: SparkSession):
         [], "session_key int, driver_number int, lap_number int"
     )
     empty_weather = spark.createDataFrame([], "session_key int")
+    empty_car_data = spark.createDataFrame([], "session_key int, driver_number int")
 
     assert compute_driver_race_summary(empty_laps, empty_drivers, empty_stints, empty_pit).count() == 0
     assert compute_tyre_degradation(empty_laps, empty_drivers, empty_stints).count() == 0
     assert compute_pit_strategy(empty_stints, empty_pit, empty_drivers).count() == 0
     assert compute_weather_impact(empty_weather, empty_laps).count() == 0
+    assert compute_driver_telemetry(empty_car_data, empty_drivers).count() == 0

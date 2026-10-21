@@ -81,7 +81,26 @@ PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY session_key;
 
 
--- 5. Pipeline Run Audit Log
+-- 5. Driver Telemetry Analysis
+CREATE TABLE IF NOT EXISTS `f1_analytics.agg_driver_telemetry` (
+    session_key INT64,
+    meeting_key INT64,
+    driver_number INT64,
+    driver_name STRING,
+    team_name STRING,
+    team_colour STRING,
+    max_speed INT64,
+    avg_speed FLOAT64,
+    avg_throttle FLOAT64,
+    full_throttle_pct FLOAT64,
+    brake_pct FLOAT64,
+    drs_open_pct FLOAT64
+)
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
+CLUSTER BY driver_number;
+
+
+-- 6. Pipeline Run Audit Log
 CREATE TABLE IF NOT EXISTS `f1_analytics.pipeline_run_audit` (
     job_name STRING,
     session_key INT64,
@@ -94,4 +113,5 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.pipeline_run_audit` (
     duration_seconds FLOAT64,
     status STRING
 );
+
 

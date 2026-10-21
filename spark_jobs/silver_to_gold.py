@@ -351,6 +351,96 @@ def compute_weather_impact(
     return impact
 
 
+def compute_driver_telemetry(
+    df_car_data: DataFrame,
+    df_drivers: DataFrame,
+) -> DataFrame:
+    """Compute aggregated driver telemetry metrics from car_data and drivers.
+
+    OpenF1 car_data 'drs' values:
+    - 0 or 1: DRS off
+    - 8: DRS detected (eligible for activation in DRS zone)
+    - 9, 10, 12, 14: DRS open / active deployment
+    Assumption: DRS is considered 'open' when drs in (9, 10, 12, 14).
+    """
+    from pyspark.sql import functions as F
+    from pyspark.sql.types import IntegerType
+
+    df_car_data = _ensure_optional_columns(
+        df_car_data,
+        {
+            "meeting_key": (None, "int"),
+            "speed": (0, "int"),
+            "throttle": (0, "int"),
+            "brake": (0, "int"),
+            "drs": (0, "int"),
+        },
+    )
+    df_drivers = _ensure_optional_columns(
+        df_drivers,
+        {
+            "full_name": ("", "string"),
+            "team_name": ("", "string"),
+            "team_colour": ("", "string"),
+        },
+    )
+
+    valid_car_data = df_car_data.filter(
+        F.col("session_key").isNotNull()
+        & F.col("driver_number").isNotNull()
+    )
+
+    # OpenF1 DRS values: 0/1=off, 8=detected, 9/10/12/14=open
+    drs_open_condition = F.col("drs").isin([9, 10, 12, 14])
+
+    telemetry_agg = valid_car_data.groupBy("session_key", "driver_number").agg(
+        F.first("meeting_key").cast(IntegerType()).alias("meeting_key"),
+        F.max("speed").cast(IntegerType()).alias("max_speed"),
+        F.round(F.avg("speed"), 2).alias("avg_speed"),
+        F.round(F.avg("throttle"), 2).alias("avg_throttle"),
+        F.round(
+            F.avg(F.when(F.col("throttle") == 100, 100.0).otherwise(0.0)),
+            2,
+        ).alias("full_throttle_pct"),
+        F.round(
+            F.avg(F.when(F.col("brake") > 0, 100.0).otherwise(0.0)),
+            2,
+        ).alias("brake_pct"),
+        F.round(
+            F.avg(F.when(drs_open_condition, 100.0).otherwise(0.0)),
+            2,
+        ).alias("drs_open_pct"),
+    )
+
+    drivers_sel = df_drivers.select(
+        "session_key",
+        "driver_number",
+        F.col("full_name").alias("driver_name"),
+        "team_name",
+        "team_colour",
+    ).dropDuplicates(["session_key", "driver_number"])
+
+    result = (
+        telemetry_agg.join(drivers_sel, on=["session_key", "driver_number"], how="left")
+        .select(
+            "session_key",
+            "meeting_key",
+            "driver_number",
+            "driver_name",
+            "team_name",
+            "team_colour",
+            "max_speed",
+            "avg_speed",
+            "avg_throttle",
+            "full_throttle_pct",
+            "brake_pct",
+            "drs_open_pct",
+        )
+        .dropDuplicates(["session_key", "driver_number"])
+    )
+    return result
+
+
 def _ensure_optional_columns(df: DataFrame, defaults: dict[str, tuple[object, str]]) -> DataFrame:
     from pyspark.sql import functions as F
 
@@ -412,7 +502,15 @@ def run_pipeline(
 
     # Step 1: Read Silver Parquet tables with Spark
     print(f"\n--- Reading Silver Parquet files for session={session_key} ---")
-    tables = ["dim_drivers", "dim_sessions", "fct_laps", "fct_stints", "fct_pit", "fct_weather"]
+    tables = [
+        "dim_drivers",
+        "dim_sessions",
+        "fct_laps",
+        "fct_stints",
+        "fct_pit",
+        "fct_weather",
+        "fct_car_data",
+    ]
     silver_dfs: dict[str, DataFrame] = {}
 
     for tbl in tables:
@@ -503,6 +601,16 @@ def run_pipeline(
             weather_df, "agg_weather_impact", silver_dfs["fct_weather"].count()
         )
 
+    # 5. agg_driver_telemetry
+    if all(k in silver_dfs for k in ["fct_car_data", "dim_drivers"]):
+        telemetry_df = compute_driver_telemetry(
+            silver_dfs["fct_car_data"],
+            silver_dfs["dim_drivers"],
+        )
+        counts["agg_driver_telemetry"] = _process_gold_table(
+            telemetry_df, "agg_driver_telemetry", silver_dfs["fct_car_data"].count()
+        )
+
     # Record run audit
     _record_audit_log(
         base=base,
@@ -585,6 +693,20 @@ GOLD_TABLE_SCHEMAS = {
         ("wind_direction", "INT64"),
         ("rainfall", "INT64"),
         ("field_avg_lap_time", "FLOAT64"),
+    ],
+    "agg_driver_telemetry": [
+        ("session_key", "INT64"),
+        ("meeting_key", "INT64"),
+        ("driver_number", "INT64"),
+        ("driver_name", "STRING"),
+        ("team_name", "STRING"),
+        ("team_colour", "STRING"),
+        ("max_speed", "INT64"),
+        ("avg_speed", "FLOAT64"),
+        ("avg_throttle", "FLOAT64"),
+        ("full_throttle_pct", "FLOAT64"),
+        ("brake_pct", "FLOAT64"),
+        ("drs_open_pct", "FLOAT64"),
     ],
 }
 
