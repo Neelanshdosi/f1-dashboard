@@ -441,6 +441,193 @@ def compute_driver_telemetry(
     return result
 
 
+def compute_race_results(
+    df_result: DataFrame | None,
+    df_grid: DataFrame | None,
+    df_drivers: DataFrame,
+    df_stints: DataFrame | None = None,
+    df_pit: DataFrame | None = None,
+) -> DataFrame:
+    """Compute race results per driver per session combining results, starting grid, drivers, stints, and pit stops.
+
+    Status evaluation rule (strictly in order):
+      1. dsq is True -> "DSQ"
+      2. dns is True -> "DNS"
+      3. dnf is True -> "DNF"
+      4. position is not null -> "Finished" (lapped drivers are Finished; see laps_down)
+      5. otherwise (including drivers with no result row) -> "Unclassified"
+    """
+    from pyspark.sql import functions as F
+    from pyspark.sql.types import (
+        BooleanType,
+        DoubleType,
+        IntegerType,
+        StringType,
+    )
+
+    # 1. Base drivers
+    df_drivers = _ensure_optional_columns(
+        df_drivers,
+        {
+            "session_key": (None, "int"),
+            "driver_number": (None, "int"),
+            "full_name": ("", "string"),
+            "name_acronym": ("", "string"),
+            "team_name": ("", "string"),
+            "team_colour": ("", "string"),
+        },
+    )
+    drivers_base = df_drivers.select(
+        F.col("session_key").cast(IntegerType()),
+        F.col("driver_number").cast(IntegerType()),
+        F.col("full_name").alias("driver_name"),
+        "name_acronym",
+        "team_name",
+        "team_colour",
+    ).dropDuplicates(["session_key", "driver_number"])
+
+    # 2. Results DataFrame
+    if df_result is not None:
+        df_result = _ensure_optional_columns(
+            df_result,
+            {
+                "session_key": (None, "int"),
+                "driver_number": (None, "int"),
+                "position": (None, "int"),
+                "number_of_laps": (None, "int"),
+                "points": (None, "double"),
+                "dnf": (False, "boolean"),
+                "dns": (False, "boolean"),
+                "dsq": (False, "boolean"),
+                "duration_seconds": (None, "double"),
+                "gap_to_leader_seconds": (None, "double"),
+                "laps_down": (None, "int"),
+            },
+        )
+        res_sel = df_result.select(
+            F.col("session_key").cast(IntegerType()),
+            F.col("driver_number").cast(IntegerType()),
+            F.col("position").cast(IntegerType()).alias("final_position"),
+            F.col("number_of_laps").cast(IntegerType()),
+            F.col("points").cast(DoubleType()),
+            F.coalesce(F.col("dnf").cast(BooleanType()), F.lit(False)).alias("dnf"),
+            F.coalesce(F.col("dns").cast(BooleanType()), F.lit(False)).alias("dns"),
+            F.coalesce(F.col("dsq").cast(BooleanType()), F.lit(False)).alias("dsq"),
+            F.col("duration_seconds").cast(DoubleType()),
+            F.col("gap_to_leader_seconds").cast(DoubleType()),
+            F.col("laps_down").cast(IntegerType()),
+            F.lit(True).alias("_has_result"),
+        ).dropDuplicates(["session_key", "driver_number"])
+    else:
+        # Dummy empty results schema
+        res_sel = drivers_base.select(
+            "session_key",
+            "driver_number",
+            F.lit(None).cast(IntegerType()).alias("final_position"),
+            F.lit(None).cast(IntegerType()).alias("number_of_laps"),
+            F.lit(None).cast(DoubleType()).alias("points"),
+            F.lit(False).alias("dnf"),
+            F.lit(False).alias("dns"),
+            F.lit(False).alias("dsq"),
+            F.lit(None).cast(DoubleType()).alias("duration_seconds"),
+            F.lit(None).cast(DoubleType()).alias("gap_to_leader_seconds"),
+            F.lit(None).cast(IntegerType()).alias("laps_down"),
+            F.lit(False).alias("_has_result"),
+        ).limit(0)
+
+    # 3. Starting Grid DataFrame
+    if df_grid is not None:
+        df_grid = _ensure_optional_columns(
+            df_grid,
+            {
+                "session_key": (None, "int"),
+                "driver_number": (None, "int"),
+                "position": (None, "int"),
+            },
+        )
+        grid_sel = df_grid.select(
+            F.col("session_key").cast(IntegerType()),
+            F.col("driver_number").cast(IntegerType()),
+            F.col("position").cast(IntegerType()).alias("grid_position"),
+        ).dropDuplicates(["session_key", "driver_number"])
+    else:
+        grid_sel = None
+
+    # 4. Pit stops count
+    if df_pit is not None and "session_key" in df_pit.columns and "driver_number" in df_pit.columns:
+        pit_counts = (
+            df_pit.filter(F.col("session_key").isNotNull() & F.col("driver_number").isNotNull())
+            .groupBy("session_key", "driver_number")
+            .agg(F.count(F.lit(1)).cast(IntegerType()).alias("total_pit_stops"))
+        )
+    else:
+        pit_counts = None
+
+    # Join drivers with results
+    joined = drivers_base.join(res_sel, on=["session_key", "driver_number"], how="left")
+
+    # Join with grid if present
+    if grid_sel is not None:
+        joined = joined.join(grid_sel, on=["session_key", "driver_number"], how="left")
+        grid_missing = F.col("grid_position").isNull()
+        grid_pos_col = F.col("grid_position")
+    else:
+        grid_missing = F.lit(True)
+        grid_pos_col = F.lit(None).cast(IntegerType())
+
+    # Join with pit counts
+    if pit_counts is not None:
+        joined = joined.join(pit_counts, on=["session_key", "driver_number"], how="left")
+        total_pits_col = F.coalesce(F.col("total_pit_stops"), F.lit(0)).cast(IntegerType())
+    else:
+        total_pits_col = F.lit(0).cast(IntegerType())
+
+    # Calculate status strictly in order:
+    # dsq -> "DSQ", dns -> "DNS", dnf -> "DNF", final_position not null -> "Finished", otherwise -> "Unclassified"
+    status_expr = (
+        F.when(F.col("dsq") == True, F.lit("DSQ"))  # noqa: E712
+        .when(F.col("dns") == True, F.lit("DNS"))  # noqa: E712
+        .when(F.col("dnf") == True, F.lit("DNF"))  # noqa: E712
+        .when(F.col("final_position").isNotNull(), F.lit("Finished"))
+        .otherwise(F.lit("Unclassified"))
+    )
+
+    # Calculate positions_gained: grid_position - final_position (null if either is null)
+    positions_gained_expr = F.when(
+        grid_pos_col.isNotNull() & F.col("final_position").isNotNull(),
+        grid_pos_col - F.col("final_position"),
+    ).otherwise(F.lit(None).cast(IntegerType()))
+
+    result = (
+        joined.withColumn("grid_position", grid_pos_col)
+        .withColumn("grid_position_missing", grid_missing.cast(BooleanType()))
+        .withColumn("positions_gained", positions_gained_expr)
+        .withColumn("status", status_expr.cast(StringType()))
+        .withColumn("total_pit_stops", total_pits_col)
+        .select(
+            "session_key",
+            "driver_number",
+            "driver_name",
+            "name_acronym",
+            "team_name",
+            "team_colour",
+            "grid_position",
+            "final_position",
+            "positions_gained",
+            "status",
+            "total_pit_stops",
+            "number_of_laps",
+            "points",
+            "duration_seconds",
+            "gap_to_leader_seconds",
+            "laps_down",
+            "grid_position_missing",
+        )
+        .dropDuplicates(["session_key", "driver_number"])
+    )
+    return result
+
+
 def _ensure_optional_columns(df: DataFrame, defaults: dict[str, tuple[object, str]]) -> DataFrame:
     from pyspark.sql import functions as F
 
@@ -510,6 +697,8 @@ def run_pipeline(
         "fct_pit",
         "fct_weather",
         "fct_car_data",
+        "fct_session_result",
+        "fct_starting_grid",
     ]
     silver_dfs: dict[str, DataFrame] = {}
 
@@ -609,6 +798,24 @@ def run_pipeline(
         )
         counts["agg_driver_telemetry"] = _process_gold_table(
             telemetry_df, "agg_driver_telemetry", silver_dfs["fct_car_data"].count()
+        )
+
+    # 6. agg_race_results
+    if "dim_drivers" in silver_dfs and ("fct_session_result" in silver_dfs or "fct_starting_grid" in silver_dfs):
+        sr_df = silver_dfs.get("fct_session_result")
+        sg_df = silver_dfs.get("fct_starting_grid")
+        st_df = silver_dfs.get("fct_stints")
+        pit_df = silver_dfs.get("fct_pit")
+        results_df = compute_race_results(
+            df_result=sr_df,
+            df_grid=sg_df,
+            df_drivers=silver_dfs["dim_drivers"],
+            df_stints=st_df,
+            df_pit=pit_df,
+        )
+        rows_in = (sr_df.count() if sr_df is not None else 0) + (sg_df.count() if sg_df is not None else 0)
+        counts["agg_race_results"] = _process_gold_table(
+            results_df, "agg_race_results", rows_in
         )
 
     # 6. Load dim_sessions into BigQuery (unpartitioned)
@@ -723,6 +930,25 @@ GOLD_TABLE_SCHEMAS = {
         ("full_throttle_pct", "FLOAT64"),
         ("brake_pct", "FLOAT64"),
         ("drs_open_pct", "FLOAT64"),
+    ],
+    "agg_race_results": [
+        ("session_key", "INT64"),
+        ("driver_number", "INT64"),
+        ("driver_name", "STRING"),
+        ("name_acronym", "STRING"),
+        ("team_name", "STRING"),
+        ("team_colour", "STRING"),
+        ("grid_position", "INT64"),
+        ("final_position", "INT64"),
+        ("positions_gained", "INT64"),
+        ("status", "STRING"),
+        ("total_pit_stops", "INT64"),
+        ("number_of_laps", "INT64"),
+        ("points", "FLOAT64"),
+        ("duration_seconds", "FLOAT64"),
+        ("gap_to_leader_seconds", "FLOAT64"),
+        ("laps_down", "INT64"),
+        ("grid_position_missing", "BOOLEAN"),
     ],
 }
 

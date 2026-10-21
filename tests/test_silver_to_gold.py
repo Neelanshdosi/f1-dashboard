@@ -172,3 +172,155 @@ def test_compute_driver_telemetry(spark: SparkSession):
     assert d44["brake_pct"] == 0.0
     assert d44["drs_open_pct"] == 50.0
 
+
+def test_compute_race_results_positions_gained_and_status_rules(spark: SparkSession):
+    """Test compute_race_results with:
+    - positions_gained: positive (gained), negative (lost), null (null grid or null final)
+    - status rule check order: dsq -> "DSQ", dns -> "DNS", dnf -> "DNF", position not null -> "Finished", otherwise -> "Unclassified"
+    - multiple flags set (e.g. dsq + dnf -> DSQ takes precedence)
+    - missing from result table -> "Unclassified"
+    - pit stops count joining
+    """
+    from spark_jobs.silver_to_gold import compute_race_results
+
+    drivers_data = [
+        {"session_key": 9472, "driver_number": 1, "full_name": "Max Verstappen", "name_acronym": "VER", "team_name": "Red Bull Racing", "team_colour": "3671c6"},
+        {"session_key": 9472, "driver_number": 44, "full_name": "Lewis Hamilton", "name_acronym": "HAM", "team_name": "Mercedes", "team_colour": "6cd3bf"},
+        {"session_key": 9472, "driver_number": 16, "full_name": "Charles Leclerc", "name_acronym": "LEC", "team_name": "Ferrari", "team_colour": "e8002d"},
+        {"session_key": 9472, "driver_number": 77, "full_name": "Valtteri Bottas", "name_acronym": "BOT", "team_name": "Kick Sauber", "team_colour": "52e252"},
+        {"session_key": 9472, "driver_number": 20, "full_name": "Kevin Magnussen", "name_acronym": "MAG", "team_name": "Haas", "team_colour": "b6babd"},
+        {"session_key": 9472, "driver_number": 31, "full_name": "Esteban Ocon", "name_acronym": "OCO", "team_name": "Alpine", "team_colour": "0093cc"},
+        {"session_key": 9472, "driver_number": 99, "full_name": "Reserve Driver", "name_acronym": "RES", "team_name": "Reserve Team", "team_colour": "ffffff"},
+    ]
+
+    result_data = [
+        # Driver 1: Started P2, Finished P1 -> positions_gained = +1
+        {"session_key": 9472, "driver_number": 1, "position": 1, "number_of_laps": 57, "points": 25.0, "dnf": False, "dns": False, "dsq": False, "duration_seconds": 5400.0, "gap_to_leader_seconds": 0.0, "laps_down": None},
+        # Driver 44: Started P1, Finished P4 -> positions_gained = -3
+        {"session_key": 9472, "driver_number": 44, "position": 4, "number_of_laps": 57, "points": 12.0, "dnf": False, "dns": False, "dsq": False, "duration_seconds": 5420.0, "gap_to_leader_seconds": 20.0, "laps_down": None},
+        # Driver 16: DNF with null position -> positions_gained = null, status = "DNF"
+        {"session_key": 9472, "driver_number": 16, "position": None, "number_of_laps": 20, "points": 0.0, "dnf": True, "dns": False, "dsq": False, "duration_seconds": None, "gap_to_leader_seconds": None, "laps_down": None},
+        # Driver 77: DNS -> status = "DNS"
+        {"session_key": 9472, "driver_number": 77, "position": None, "number_of_laps": 0, "points": 0.0, "dnf": False, "dns": True, "dsq": False, "duration_seconds": None, "gap_to_leader_seconds": None, "laps_down": None},
+        # Driver 20: DSQ + DNF both True -> status = "DSQ" (precedence)
+        {"session_key": 9472, "driver_number": 20, "position": None, "number_of_laps": 10, "points": 0.0, "dnf": True, "dns": False, "dsq": True, "duration_seconds": None, "gap_to_leader_seconds": None, "laps_down": None},
+        # Driver 31: Pit-lane starter (grid position null), Finished P10 -> positions_gained = null
+        {"session_key": 9472, "driver_number": 31, "position": 10, "number_of_laps": 57, "points": 1.0, "dnf": False, "dns": False, "dsq": False, "duration_seconds": 5450.0, "gap_to_leader_seconds": 50.0, "laps_down": None},
+        # Driver 99 is intentionally missing from result_data
+    ]
+
+    grid_data = [
+        {"session_key": 9472, "driver_number": 1, "position": 2},
+        {"session_key": 9472, "driver_number": 44, "position": 1},
+        {"session_key": 9472, "driver_number": 16, "position": 3},
+        {"session_key": 9472, "driver_number": 77, "position": 15},
+        {"session_key": 9472, "driver_number": 20, "position": 18},
+        {"session_key": 9472, "driver_number": 31, "position": None},  # Pit-lane starter
+        {"session_key": 9472, "driver_number": 99, "position": 20},
+    ]
+
+    pit_data = [
+        {"session_key": 9472, "driver_number": 1},
+        {"session_key": 9472, "driver_number": 1},  # 2 pit stops
+        {"session_key": 9472, "driver_number": 44},  # 1 pit stop
+    ]
+
+    from pyspark.sql.types import (
+        BooleanType,
+        DoubleType,
+        IntegerType,
+        StructField,
+        StructType,
+    )
+
+    result_schema = StructType([
+        StructField("session_key", IntegerType(), True),
+        StructField("driver_number", IntegerType(), True),
+        StructField("position", IntegerType(), True),
+        StructField("number_of_laps", IntegerType(), True),
+        StructField("points", DoubleType(), True),
+        StructField("dnf", BooleanType(), True),
+        StructField("dns", BooleanType(), True),
+        StructField("dsq", BooleanType(), True),
+        StructField("duration_seconds", DoubleType(), True),
+        StructField("gap_to_leader_seconds", DoubleType(), True),
+        StructField("laps_down", IntegerType(), True),
+    ])
+
+    grid_schema = StructType([
+        StructField("session_key", IntegerType(), True),
+        StructField("driver_number", IntegerType(), True),
+        StructField("position", IntegerType(), True),
+    ])
+
+    df_drivers = spark.createDataFrame(drivers_data)
+    df_result = spark.createDataFrame(result_data, schema=result_schema)
+    df_grid = spark.createDataFrame(grid_data, schema=grid_schema)
+    df_pit = spark.createDataFrame(pit_data)
+
+    res = compute_race_results(df_result, df_grid, df_drivers, df_pit=df_pit)
+    assert res.count() == 7
+    rows = {r["driver_number"]: r for r in res.collect()}
+
+    # Driver 1: +1 position gained, Finished, 2 pit stops
+    assert rows[1]["grid_position"] == 2
+    assert rows[1]["final_position"] == 1
+    assert rows[1]["positions_gained"] == 1
+    assert rows[1]["status"] == "Finished"
+    assert rows[1]["total_pit_stops"] == 2
+    assert rows[1]["grid_position_missing"] is False
+
+    # Driver 44: -3 positions gained (lost 3), Finished, 1 pit stop
+    assert rows[44]["grid_position"] == 1
+    assert rows[44]["final_position"] == 4
+    assert rows[44]["positions_gained"] == -3
+    assert rows[44]["status"] == "Finished"
+    assert rows[44]["total_pit_stops"] == 1
+
+    # Driver 16: DNF with null final position -> null positions_gained
+    assert rows[16]["status"] == "DNF"
+    assert rows[16]["final_position"] is None
+    assert rows[16]["positions_gained"] is None
+
+    # Driver 77: DNS -> null positions_gained
+    assert rows[77]["status"] == "DNS"
+    assert rows[77]["positions_gained"] is None
+
+    # Driver 20: Both DSQ and DNF -> DSQ rule precedence
+    assert rows[20]["status"] == "DSQ"
+
+    # Driver 31: Pit-lane starter with null grid -> null positions_gained, grid_position_missing=True
+    assert rows[31]["grid_position"] is None
+    assert rows[31]["final_position"] == 10
+    assert rows[31]["positions_gained"] is None
+    assert rows[31]["grid_position_missing"] is True
+
+    # Driver 99: Missing from results -> "Unclassified", 0 pit stops
+    assert rows[99]["status"] == "Unclassified"
+    assert rows[99]["final_position"] is None
+    assert rows[99]["total_pit_stops"] == 0
+
+
+def test_compute_race_results_when_grid_is_none(spark: SparkSession):
+    """Plan Change B: compute_race_results functions cleanly when df_grid is None."""
+    from spark_jobs.silver_to_gold import compute_race_results
+
+    drivers_data = [
+        {"session_key": 9472, "driver_number": 1, "full_name": "Max Verstappen", "team_name": "Red Bull", "team_colour": "3671c6"},
+    ]
+    result_data = [
+        {"session_key": 9472, "driver_number": 1, "position": 1, "number_of_laps": 57, "points": 25.0, "dnf": False, "dns": False, "dsq": False},
+    ]
+
+    df_drivers = spark.createDataFrame(drivers_data)
+    df_result = spark.createDataFrame(result_data)
+
+    res = compute_race_results(df_result=df_result, df_grid=None, df_drivers=df_drivers)
+    assert res.count() == 1
+    r = res.first()
+    assert r["final_position"] == 1
+    assert r["grid_position"] is None
+    assert r["positions_gained"] is None
+    assert r["grid_position_missing"] is True
+    assert r["status"] == "Finished"
+

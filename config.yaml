@@ -30,6 +30,8 @@ bigquery:
       clustering_fields: [session_key]
     agg_driver_telemetry:
       clustering_fields: [driver_number]
+    agg_race_results:
+      clustering_fields: [driver_number, team_name]
 
 # ── Dashboard ────────────────────────────────
 dashboard:

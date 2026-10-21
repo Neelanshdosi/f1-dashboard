@@ -14,6 +14,9 @@ SELECT * FROM `PROJECT_ID.f1_analytics.agg_pit_strategy`;
 CREATE OR REPLACE TABLE `PROJECT_ID.f1_analytics.agg_weather_impact_unpartitioned` AS
 SELECT * FROM `PROJECT_ID.f1_analytics.agg_weather_impact`;
 
+CREATE OR REPLACE TABLE `PROJECT_ID.f1_analytics.agg_race_results_unpartitioned` AS
+SELECT * FROM `PROJECT_ID.f1_analytics.agg_race_results`;
+
 -- Query: Tyre degradation for one race
 SELECT *
 FROM `PROJECT_ID.f1_analytics.agg_tyre_degradation`

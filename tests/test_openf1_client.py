@@ -178,12 +178,39 @@ def test_respects_429_and_retries():
 
 
 @resp_lib.activate
-def test_no_retry_on_404():
-    """HTTP 404 should not be retried – raise immediately."""
-    resp_lib.add(resp_lib.GET, f"{BASE_URL}/laps", status=404)
+def test_404_with_no_results_body_returns_empty_list():
+    """HTTP 404 with exact {"detail": "No results found."} should return empty list."""
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/starting_grid",
+        json={"detail": "No results found."},
+        status=404,
+    )
+    with _make_client() as client:
+        data = client.get("starting_grid", params={"session_key": 9472})
+    assert data == []
+
+
+@resp_lib.activate
+def test_404_with_different_body_raises():
+    """HTTP 404 with other error body should raise requests.HTTPError."""
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/laps",
+        json={"detail": "Session does not exist"},
+        status=404,
+    )
+    with _make_client() as client, pytest.raises(requests.HTTPError, match="HTTP 404 Not Found"):
+        client.get("laps", params={"session_key": 0})
+    assert len(resp_lib.calls) == 1
+
+
+@resp_lib.activate
+def test_no_retry_on_404_general():
+    """Generic 404 text response should raise immediately without retry."""
+    resp_lib.add(resp_lib.GET, f"{BASE_URL}/laps", body="Not Found", status=404)
     with _make_client() as client, pytest.raises(requests.HTTPError):
         client.get("laps", params={"session_key": 0})
-    # Only 1 call should have been made
     assert len(resp_lib.calls) == 1
 
 

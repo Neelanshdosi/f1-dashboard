@@ -100,6 +100,30 @@ PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
 CLUSTER BY driver_number;
 
 
+-- 6. Official Race Results & Starting Grid
+CREATE TABLE IF NOT EXISTS `f1_analytics.agg_race_results` (
+    session_key INT64,
+    driver_number INT64,
+    driver_name STRING,
+    name_acronym STRING,
+    team_name STRING,
+    team_colour STRING,
+    grid_position INT64,
+    final_position INT64,
+    positions_gained INT64,
+    status STRING,
+    total_pit_stops INT64,
+    number_of_laps INT64,
+    points FLOAT64,
+    duration_seconds FLOAT64,
+    gap_to_leader_seconds FLOAT64,
+    laps_down INT64,
+    grid_position_missing BOOLEAN
+)
+PARTITION BY RANGE_BUCKET(session_key, GENERATE_ARRAY(9000, 12000, 1))
+CLUSTER BY driver_number, team_name;
+
+
 -- 6. Pipeline Run Audit Log
 CREATE TABLE IF NOT EXISTS `f1_analytics.pipeline_run_audit` (
     job_name STRING,

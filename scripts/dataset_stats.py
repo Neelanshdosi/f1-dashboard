@@ -12,6 +12,7 @@ GOLD_DATASETS = {
     "agg_tyre_degradation": "tyre_degradation",
     "agg_pit_strategy": "pit_strategy",
     "agg_weather_impact": "weather_impact",
+    "agg_race_results": "race_results",
 }
 
 

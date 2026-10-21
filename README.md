@@ -67,6 +67,8 @@ The ingestion config requests these OpenF1 endpoints and stores each endpoint un
 | `fct_pit` | Driver/session pit lap, timestamp, pit, stop, and lane durations |
 | `fct_weather` | Timestamped air/track temperature, humidity, pressure, wind, and rainfall fields |
 | `fct_car_data` | Timestamped RPM, speed, gear, throttle, brake, and DRS fields |
+| `fct_session_result` | Session classified outcomes, positions, points, duration, gaps, and DNF/DNS/DSQ flags |
+| `fct_starting_grid` | Starting grid slots (`position`) and qualifying lap durations |
 
 Silver files are written below `gs://<bucket>/silver/<table>/season=<year>/session_key=<key>/`. Malformed or out-of-bounds records failing quality rules are routed to `gs://<bucket>/silver/rejected_records/season=<year>/session_key=<key>/`.
 
@@ -81,8 +83,34 @@ Aggregated tables are range partitioned on `session_key` using `RANGE_BUCKET(ses
 | `agg_pit_strategy` | `session_key`, `driver_number`, `driver_name`, `team_name`, `stint_number`, `compound`, `lap_start`, `lap_end`, `stint_length`, `pit_lap`, `pit_duration`, `stop_duration` | `driver_number`, `compound` |
 | `agg_weather_impact` | `session_key`, `date_utc`, `air_temperature`, `track_temperature`, `humidity`, `pressure`, `wind_speed`, `wind_direction`, `rainfall`, `field_avg_lap_time` | `session_key` |
 | `agg_driver_telemetry` | `session_key`, `meeting_key`, `driver_number`, `driver_name`, `team_name`, `team_colour`, `max_speed`, `avg_speed`, `avg_throttle`, `full_throttle_pct`, `brake_pct`, `drs_open_pct` | `driver_number` |
+| `agg_race_results` | `session_key`, `driver_number`, `driver_name`, `name_acronym`, `team_name`, `team_colour`, `grid_position`, `final_position`, `positions_gained`, `status`, `total_pit_stops`, `number_of_laps`, `points`, `duration_seconds`, `gap_to_leader_seconds`, `laps_down`, `grid_position_missing` | `driver_number`, `team_name` |
 | `dim_sessions` | `session_key`, `meeting_key`, `session_name`, `date_start`, `circuit_key`, `country_name`, `year` | *(Unpartitioned dimension)* |
 | `pipeline_run_audit` | `job_name`, `session_key`, `season`, `table_name`, `rows_in`, `rows_out`, `rows_rejected`, `started_at`, `duration_seconds`, `status` | *(Run audit log)* |
+
+#### Race Results Status Rules
+Driver status in `agg_race_results` is evaluated strictly in the following order:
+1. `dsq == True` → `"DSQ"`
+2. `dns == True` → `"DNS"`
+3. `dnf == True` → `"DNF"`
+4. `final_position is not null` → `"Finished"` (lapped finishers are classified as `"Finished"`, with `laps_down` populated)
+5. Otherwise (including drivers with no session result row) → `"Unclassified"`
+
+#### OpenF1 Starting Grid Endpoint Coverage
+The `/v1/starting_grid` endpoint is in BETA on OpenF1. A direct probe on 2026-10-21 shows the following factual availability:
+
+| Session Key | Year | Race / Grand Prix | HTTP Status | Rows Returned |
+|---|---|---|---|---:|
+| `7783` | 2023 | Spanish Grand Prix | 200 | 18 |
+| `9158` | 2023 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9197` | 2023 | Abu Dhabi Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9472` | 2024 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9480` | 2024 | Saudi Arabian Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9662` | 2024 | Abu Dhabi Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9693` | 2024 | Las Vegas Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9839` | 2025 | Australian Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9947` | 2025 | Chinese Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `9979` | 2025 | Japanese Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| `10014` | 2025 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
 
 ## Data quality
 

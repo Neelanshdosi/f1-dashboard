@@ -243,6 +243,25 @@ class OpenF1Client:
                 )
                 return []
 
+            if resp.status_code == 404:
+                try:
+                    err_json = resp.json()
+                except Exception:
+                    err_json = None
+
+                if isinstance(err_json, dict) and err_json.get("detail") == "No results found.":
+                    self._log.warning(
+                        "404 No results found – returning empty",
+                        extra={"url": url, "params": params},
+                    )
+                    return []
+
+                # Other 404: raise error with URL and response text
+                raise requests.HTTPError(
+                    f"HTTP 404 Not Found for {url} with params {params}: {resp.text}",
+                    response=resp,
+                )
+
             # Other 4xx: do not retry
             resp.raise_for_status()
 
