@@ -119,6 +119,37 @@ def test_loading_two_different_session_keys_produces_two_different_destinations(
         assert dest.endswith(f"${session_key}")
 
 
+def test_agg_race_results_loads_to_partition_scoped_destination(spark, monkeypatch):
+    """Assert agg_race_results uses the partition-safe path ending with $<session_key>."""
+    from pyspark.sql.readwriter import DataFrameWriter
+
+    session_key = 9662
+    project_id = "test-project"
+    bq_client = Mock()
+    load_job = Mock()
+    bq_client.load_table_from_uri.return_value = load_job
+
+    monkeypatch.setattr(DataFrameWriter, "parquet", lambda self, path: None)
+
+    df = spark.createDataFrame([{"session_key": session_key, "driver_number": 1, "final_position": 1}])
+    count = _write_and_load_gold(
+        bq_client=bq_client,
+        df=df,
+        table_name="agg_race_results",
+        season=2024,
+        session_key=session_key,
+        base_uri="gs://test-bucket",
+        project_id=project_id,
+        is_local=False,
+    )
+
+    assert count == 1
+    bq_client.load_table_from_uri.assert_called_once()
+    dest = bq_client.load_table_from_uri.call_args[0][1]
+    assert dest == f"test-project.f1_analytics.agg_race_results${session_key}"
+    assert dest.endswith(f"${session_key}")
+
+
 def test_validate_session_key_raises_on_mismatch(spark):
     import pytest
 
@@ -132,5 +163,6 @@ def test_validate_session_key_raises_on_mismatch(spark):
     )
     with pytest.raises(ValueError, match="invalid session_key, expected 9472"):
         _validate_session_key(invalid_df, 9472)
+
 
 

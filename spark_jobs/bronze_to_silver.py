@@ -868,7 +868,10 @@ def run_pipeline(
                     matched_files = list(target_dir.glob("*.json")) if target_dir.exists() else []
 
                 if not matched_files:
-                    print(f"  [WARN] No records found for {ep} at {path_pattern}")
+                    if ep == "session_result":
+                        print(f"  [ERROR] Required endpoint {ep} not found at {path_pattern}")
+                    else:
+                        print(f"  [WARN] No records found for {ep} at {path_pattern}")
                     if ep in ("session_result", "starting_grid"):
                         audit_rows.append(
                             build_audit_row(
@@ -881,7 +884,7 @@ def run_pipeline(
                                 rows_rejected=0,
                                 started_at=started_at,
                                 duration_seconds=0.0,
-                                status="SUCCESS",
+                                status="NO_DATA",
                             )
                         )
                     continue
@@ -894,7 +897,10 @@ def run_pipeline(
                 try:
                     df_raw = reader.json(path_pattern)
                 except AnalysisException as ae:
-                    print(f"  [WARN] Path not found for {ep} at {path_pattern}: {ae}")
+                    if ep == "session_result":
+                        print(f"  [ERROR] Required endpoint {ep} path not found at {path_pattern}: {ae}")
+                    else:
+                        print(f"  [WARN] Path not found for {ep} at {path_pattern}: {ae}")
                     if ep in ("session_result", "starting_grid"):
                         audit_rows.append(
                             build_audit_row(
@@ -907,7 +913,7 @@ def run_pipeline(
                                 rows_rejected=0,
                                 started_at=started_at,
                                 duration_seconds=0.0,
-                                status="SUCCESS",
+                                status="NO_DATA",
                             )
                         )
                     continue
@@ -917,7 +923,10 @@ def run_pipeline(
                 df_raw = df_raw.filter(df_raw.session_key.cast("int") == session_key)
 
             if df_raw.rdd.isEmpty():
-                print(f"  [WARN] Empty dataframe for {ep} at {path_pattern}")
+                if ep == "session_result":
+                    print(f"  [ERROR] Required endpoint {ep} has empty dataframe at {path_pattern}")
+                else:
+                    print(f"  [WARN] Empty dataframe for {ep} at {path_pattern}")
                 if ep in ("session_result", "starting_grid"):
                     audit_rows.append(
                         build_audit_row(
@@ -930,7 +939,7 @@ def run_pipeline(
                             rows_rejected=0,
                             started_at=started_at,
                             duration_seconds=0.0,
-                            status="SUCCESS",
+                            status="NO_DATA",
                         )
                     )
                 continue
@@ -938,7 +947,10 @@ def run_pipeline(
             raw_dfs[ep] = df_raw
             print(f"  Loaded {ep} from {path_pattern}")
         except Exception as e:
-            print(f"  [WARN] Could not read {ep} at {path_pattern}: {e}")
+            if ep == "session_result":
+                print(f"  [ERROR] Could not read required endpoint {ep} at {path_pattern}: {e}")
+            else:
+                print(f"  [WARN] Could not read {ep} at {path_pattern}: {e}")
             if ep in ("session_result", "starting_grid"):
                 audit_rows.append(
                     build_audit_row(
@@ -951,7 +963,7 @@ def run_pipeline(
                         rows_rejected=0,
                         started_at=started_at,
                         duration_seconds=0.0,
-                        status="SUCCESS",
+                        status="NO_DATA",
                     )
                 )
             continue

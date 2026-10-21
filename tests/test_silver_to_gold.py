@@ -324,3 +324,46 @@ def test_compute_race_results_when_grid_is_none(spark: SparkSession):
     assert r["grid_position_missing"] is True
     assert r["status"] == "Finished"
 
+
+def test_run_pipeline_no_data_audit_when_session_result_missing(spark: SparkSession, tmp_path, monkeypatch):
+    """NO-RESULTS RULE: if Silver fct_session_result is missing or empty for a session,
+
+    write NO rows to agg_race_results for it, log an error, and record status NO_DATA
+    in the audit table.
+    """
+    import json
+
+    from spark_jobs.silver_to_gold import run_pipeline
+
+    session_key = 9999
+    season = 2024
+    base_uri = f"file:///{tmp_path.as_posix()}"
+
+    # Create dummy Silver dim_drivers and fct_laps so pipeline runs
+    drivers_dir = tmp_path / "silver" / "dim_drivers" / f"season={season}" / f"session_key={session_key}"
+    drivers_dir.mkdir(parents=True, exist_ok=True)
+    df_drivers = spark.createDataFrame([{"session_key": session_key, "driver_number": 1, "full_name": "Test Driver", "team_name": "Test", "team_colour": "fff"}])
+    df_drivers.write.mode("overwrite").parquet(str(drivers_dir))
+
+    # Note: no fct_session_result folder created at all
+
+    # Run pipeline
+    counts = run_pipeline(session_key=session_key, season=season, base_uri=base_uri)
+    assert "agg_race_results" not in counts
+
+    # Check gold output directory does not exist or has no parquet files
+    gold_dir = tmp_path / "gold" / "agg_race_results" / f"season={season}" / f"session_key={session_key}"
+    assert not gold_dir.exists()
+
+    # Read audit log
+    audit_file = tmp_path / "pipeline_run_audit.jsonl"
+    assert audit_file.exists()
+    audit_records = [json.loads(line) for line in audit_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    agg_res_audits = [r for r in audit_records if r["table_name"] == "agg_race_results"]
+    assert len(agg_res_audits) == 1
+    audit = agg_res_audits[0]
+    assert audit["status"] == "NO_DATA"
+    assert audit["rows_in"] == 0
+    assert audit["rows_out"] == 0
+
+

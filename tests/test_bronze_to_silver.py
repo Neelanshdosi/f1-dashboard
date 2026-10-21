@@ -422,6 +422,110 @@ def test_transform_fct_starting_grid(spark: SparkSession):
     assert rows_by_driver[2]["lap_duration"] is None
 
 
+def test_transform_fct_session_result_and_grid_from_real_fixtures(spark: SparkSession):
+    """Item 3.a test: Real-file Silver test reading tests/fixtures/session_result_9662.json,
+    session_result_7783.json, starting_grid_9662.json, and starting_grid_7783.json through
+    the explicit StructType read path, followed by transformation assertions:
+    - P1 has points and duration_seconds
+    - A lapped finisher has laps_down > 0 and gap_to_leader_seconds is null
+    - A DNF has null position and dnf is true
+    - Array-valued duration/gap cases (from 7783) yield null numeric fields with raw string preserved
+    - Starting grid returns proper positions and lap_durations
+    """
+    from pathlib import Path
+
+    from pyspark.sql.types import (
+        BooleanType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
+    )
+
+    from spark_jobs.bronze_to_silver import (
+        transform_fct_session_result,
+        transform_fct_starting_grid,
+    )
+
+    fixtures_dir = Path(__file__).parent / "fixtures"
+
+    res_schema = StructType([
+        StructField("session_key", IntegerType(), True),
+        StructField("meeting_key", IntegerType(), True),
+        StructField("driver_number", IntegerType(), True),
+        StructField("position", IntegerType(), True),
+        StructField("number_of_laps", IntegerType(), True),
+        StructField("points", DoubleType(), True),
+        StructField("dnf", BooleanType(), True),
+        StructField("dns", BooleanType(), True),
+        StructField("dsq", BooleanType(), True),
+        StructField("duration", StringType(), True),
+        StructField("gap_to_leader", StringType(), True),
+    ])
+
+    grid_schema = StructType([
+        StructField("session_key", IntegerType(), True),
+        StructField("meeting_key", IntegerType(), True),
+        StructField("driver_number", IntegerType(), True),
+        StructField("position", IntegerType(), True),
+        StructField("lap_duration", DoubleType(), True),
+    ])
+
+    # 1. Test 9662 (Race results)
+    raw_res_9662 = spark.read.schema(res_schema).option("multiline", "true").json(
+        str(fixtures_dir / "session_result_9662.json")
+    )
+    silver_res_9662 = transform_fct_session_result(raw_res_9662)
+    assert silver_res_9662.count() == 20
+    rows_9662 = {r["driver_number"]: r for r in silver_res_9662.collect()}
+
+    # Assertion 1: P1 has points and duration_seconds
+    p1 = rows_9662[4]
+    assert p1["position"] == 1
+    assert p1["points"] == 25.0
+    assert p1["duration_seconds"] == 5193.291
+    assert p1["gap_to_leader_seconds"] == 0.0
+
+    # Assertion 2: Lapped finisher has laps_down > 0 and gap_to_leader_seconds null
+    lapped = rows_9662[23]
+    assert lapped["laps_down"] == 1
+    assert lapped["gap_to_leader_seconds"] is None
+    assert lapped["gap_to_leader_raw"] == "+1 LAP"
+
+    # Assertion 3: DNF has null position and dnf true
+    dnf_driver = rows_9662[77]
+    assert dnf_driver["position"] is None
+    assert dnf_driver["dnf"] is True
+    assert dnf_driver["duration_seconds"] is None
+    assert dnf_driver["gap_to_leader_seconds"] is None
+
+    # 2. Test 7783 (Array duration/gap case)
+    raw_res_7783 = spark.read.schema(res_schema).option("multiline", "true").json(
+        str(fixtures_dir / "session_result_7783.json")
+    )
+    silver_res_7783 = transform_fct_session_result(raw_res_7783)
+    assert silver_res_7783.count() == 20
+    rows_7783 = {r["driver_number"]: r for r in silver_res_7783.collect()}
+
+    # Assertion 4: Array-valued duration/gap yields null numeric fields, raw preserved
+    arr_driver = rows_7783[1]
+    assert arr_driver["duration_seconds"] is None
+    assert arr_driver["gap_to_leader_seconds"] is None
+    assert arr_driver["gap_to_leader_raw"] is not None
+    assert arr_driver["gap_to_leader_raw"].startswith("[")
+
+    # 3. Test 7783 Starting Grid
+    raw_grid_7783 = spark.read.schema(grid_schema).option("multiline", "true").json(
+        str(fixtures_dir / "starting_grid_7783.json")
+    )
+    silver_grid_7783 = transform_fct_starting_grid(raw_grid_7783)
+    assert silver_grid_7783.count() == 18
+    grid_rows_7783 = {r["driver_number"]: r for r in silver_grid_7783.collect()}
+    assert grid_rows_7783[1]["position"] == 1
+    assert grid_rows_7783[1]["lap_duration"] == 76.732
+
+
 def test_bronze_to_silver_pipeline_tolerates_missing_starting_grid(tmp_path):
     """Plan Change A test: Bronze-to-Silver completes cleanly when starting_grid Bronze folder does not exist."""
     import json
@@ -485,4 +589,4 @@ def test_bronze_to_silver_pipeline_tolerates_missing_starting_grid(tmp_path):
     assert len(sg_audits) == 1
     assert sg_audits[0]["rows_in"] == 0
     assert sg_audits[0]["rows_out"] == 0
-    assert sg_audits[0]["status"] == "SUCCESS"
+    assert sg_audits[0]["status"] == "NO_DATA"

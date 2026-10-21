@@ -801,11 +801,33 @@ def run_pipeline(
         )
 
     # 6. agg_race_results
-    if "dim_drivers" in silver_dfs and ("fct_session_result" in silver_dfs or "fct_starting_grid" in silver_dfs):
-        sr_df = silver_dfs.get("fct_session_result")
-        sg_df = silver_dfs.get("fct_starting_grid")
-        st_df = silver_dfs.get("fct_stints")
-        pit_df = silver_dfs.get("fct_pit")
+    sr_df = silver_dfs.get("fct_session_result")
+    sg_df = silver_dfs.get("fct_starting_grid")
+    st_df = silver_dfs.get("fct_stints")
+    pit_df = silver_dfs.get("fct_pit")
+
+    if sr_df is None or sr_df.rdd.isEmpty():
+        import logging
+        logging.getLogger(__name__).error(
+            f"Silver fct_session_result is missing or empty for session={session_key}. "
+            "Writing NO rows to agg_race_results (never synthesizing results from laps)."
+        )
+        print(f"  [ERROR] Silver fct_session_result is missing or empty for session={session_key}. Writing NO rows to agg_race_results.")
+        audit_rows.append(
+            build_audit_row(
+                job_name="silver_to_gold",
+                session_key=session_key,
+                season=season,
+                table_name="agg_race_results",
+                rows_in=0,
+                rows_out=0,
+                rows_rejected=0,
+                started_at=started_at,
+                duration_seconds=0.0,
+                status="NO_DATA",
+            )
+        )
+    elif "dim_drivers" in silver_dfs:
         results_df = compute_race_results(
             df_result=sr_df,
             df_grid=sg_df,
@@ -813,7 +835,7 @@ def run_pipeline(
             df_stints=st_df,
             df_pit=pit_df,
         )
-        rows_in = (sr_df.count() if sr_df is not None else 0) + (sg_df.count() if sg_df is not None else 0)
+        rows_in = sr_df.count() + (sg_df.count() if sg_df is not None else 0)
         counts["agg_race_results"] = _process_gold_table(
             results_df, "agg_race_results", rows_in
         )
