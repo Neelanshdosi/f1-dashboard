@@ -290,3 +290,64 @@ class OpenF1Client:
 
     def __exit__(self, *_: Any) -> None:
         self.close()
+
+
+def resolve_qualifying_session(
+    client: OpenF1Client | requests.Session,
+    race_session_key: int,
+) -> int | None:
+    """Resolve the qualifying session_key for a given race session_key.
+
+    - GET /v1/sessions?session_key=<race> to get meeting_key
+    - GET /v1/sessions?meeting_key=<m>&session_name=Qualifying
+    - Match session_name EXACTLY "Qualifying" (never "Sprint Qualifying" or "Sprint Shootout").
+    - If none or more than one match, log a warning and return None.
+    """
+    import logging
+
+    # Support either OpenF1Client or requests.Session (for refresh_dashboard_data)
+    if isinstance(client, OpenF1Client):
+        race_sessions = client.get("sessions", params={"session_key": race_session_key})
+    else:
+        url = "https://api.openf1.org/v1/sessions"
+        resp = client.get(url, params={"session_key": race_session_key}, timeout=90)
+        race_sessions = resp.json() if resp.status_code == 200 else []
+
+    if not race_sessions:
+        logging.warning(
+            "Could not find race session for session_key=%s to resolve qualifying session",
+            race_session_key,
+        )
+        return None
+
+    meeting_key = race_sessions[0].get("meeting_key")
+    if meeting_key is None:
+        logging.warning(
+            "Race session session_key=%s has no meeting_key",
+            race_session_key,
+        )
+        return None
+
+    if isinstance(client, OpenF1Client):
+        sessions = client.get("sessions", params={"meeting_key": meeting_key, "session_name": "Qualifying"})
+    else:
+        url = "https://api.openf1.org/v1/sessions"
+        resp = client.get(url, params={"meeting_key": meeting_key, "session_name": "Qualifying"}, timeout=90)
+        sessions = resp.json() if resp.status_code == 200 else []
+
+    # Match session_name EXACTLY "Qualifying"
+    qual_matches = [
+        s for s in sessions
+        if s.get("session_name") == "Qualifying"
+    ]
+
+    if len(qual_matches) == 1:
+        return qual_matches[0].get("session_key")
+
+    logging.warning(
+        "Expected exactly 1 Qualifying session for meeting_key=%s, found %d matches: %s",
+        meeting_key,
+        len(qual_matches),
+        [s.get("session_name") for s in sessions],
+    )
+    return None

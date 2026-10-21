@@ -480,6 +480,7 @@ def transform_fct_starting_grid(df: DataFrame) -> DataFrame:
             "driver_number": (None, "int"),
             "position": (None, "int"),
             "lap_duration": (None, "double"),
+            "grid_source_session_key": (None, "int"),
         },
     )
 
@@ -489,12 +490,14 @@ def transform_fct_starting_grid(df: DataFrame) -> DataFrame:
         .withColumn("driver_number", F.col("driver_number").cast(IntegerType()))
         .withColumn("position", F.col("position").cast(IntegerType()))
         .withColumn("lap_duration", F.col("lap_duration").cast(DoubleType()))
+        .withColumn("grid_source_session_key", F.col("grid_source_session_key").cast(IntegerType()))
         .select(
             "session_key",
             "meeting_key",
             "driver_number",
             "position",
             "lap_duration",
+            "grid_source_session_key",
         )
         .dropDuplicates(["session_key", "driver_number"])
     )

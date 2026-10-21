@@ -697,3 +697,82 @@ def test_no_hardcoded_race_names_in_scripts():
         for s in disallowed_race_strings:
             assert s not in content, f"Found hardcoded race name '{s}' in {py_file.name}"
 
+
+def test_qualifying_grid_rewritten_and_positions_gained(spark):
+    """Test Task 4B: positions_gained = grid_position - final_position on 9472 fixtures,
+
+    rewritten Bronze record has race key and grid_source_session_key,
+    and missing grid yields grid_position_missing True.
+    """
+    import json
+
+    from scripts.refresh_dashboard_data import add_defaults, spark_frame
+    from spark_jobs.bronze_to_silver import (
+        transform_dim_drivers,
+        transform_fct_session_result,
+        transform_fct_starting_grid,
+    )
+    from spark_jobs.silver_to_gold import compute_race_results
+
+    # 1. Load starting_grid_9468 fixture
+    fixture_path = ROOT / "tests" / "fixtures" / "starting_grid_9468.json"
+    with fixture_path.open(encoding="utf-8") as f:
+        raw_grid_9468 = json.load(f)
+
+    # 2. Simulate rewritten Bronze record
+    rewritten_grid = []
+    for row in raw_grid_9468:
+        row_copy = dict(row)
+        row_copy["session_key"] = 9472
+        row_copy["grid_source_session_key"] = 9468
+        rewritten_grid.append(row_copy)
+
+    assert len(rewritten_grid) == 20
+    assert rewritten_grid[0]["session_key"] == 9472
+    assert rewritten_grid[0]["grid_source_session_key"] == 9468
+
+    # 3. Bronze to Silver transform
+    grid_df = transform_fct_starting_grid(spark_frame(spark, rewritten_grid))
+    grid_records = {r["driver_number"]: r for r in grid_df.collect()}
+    assert 1 in grid_records
+    assert grid_records[1]["grid_source_session_key"] == 9468
+    assert grid_records[1]["position"] == 1
+
+    # 4. Results calculation on session 9472 (VER P1 on grid, P1 in race -> positions_gained = 0; SAI P4 on grid, P3 in race -> positions_gained = +1)
+    raw_res = [
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 1, "position": 1, "points": 26.0, "dnf": False, "dns": False, "dsq": False, "duration": "5400.0", "gap_to_leader": "0.0"},
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 55, "position": 3, "points": 15.0, "dnf": False, "dns": False, "dsq": False, "duration": "5425.0", "gap_to_leader": "25.0"},
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 99, "position": 18, "points": 0.0, "dnf": False, "dns": False, "dsq": False, "duration": "5500.0", "gap_to_leader": "100.0"},
+    ]
+    raw_drivers = [
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 1, "broadcast_name": "VER", "full_name": "Max Verstappen", "name_acronym": "VER", "team_name": "Red Bull", "team_colour": "3671c6"},
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 55, "broadcast_name": "SAI", "full_name": "Carlos Sainz", "name_acronym": "SAI", "team_name": "Ferrari", "team_colour": "e80020"},
+        {"session_key": 9472, "meeting_key": 1229, "driver_number": 99, "broadcast_name": "UNK", "full_name": "Unknown", "name_acronym": "UNK", "team_name": "Unknown", "team_colour": "ffffff"},
+    ]
+    driver_fields = ("driver_number", "session_key", "meeting_key", "broadcast_name", "full_name", "first_name", "last_name", "name_acronym", "team_name", "team_colour", "country_code", "headshot_url")
+    drivers_df = transform_dim_drivers(spark_frame(spark, add_defaults(raw_drivers, driver_fields)))
+    sr_df = transform_fct_session_result(spark_frame(spark, raw_res))
+
+    res_df = compute_race_results(sr_df, grid_df, drivers_df, None, None)
+    results_by_driver = {r["driver_number"]: r for r in res_df.collect()}
+
+    # Driver 1: grid 1, final 1 -> positions_gained = 0
+    assert results_by_driver[1]["grid_position"] == 1
+    assert results_by_driver[1]["final_position"] == 1
+    assert results_by_driver[1]["positions_gained"] == 0
+    assert results_by_driver[1]["grid_position_missing"] is False
+    assert results_by_driver[1]["grid_source_session_key"] == 9468
+
+    # Driver 55: grid 4, final 3 -> positions_gained = 1 (4 - 3)
+    assert results_by_driver[55]["grid_position"] == 4
+    assert results_by_driver[55]["final_position"] == 3
+    assert results_by_driver[55]["positions_gained"] == 1
+    assert results_by_driver[55]["grid_position_missing"] is False
+    assert results_by_driver[55]["grid_source_session_key"] == 9468
+
+    # Driver 99: not on grid -> grid_position None, grid_position_missing True, positions_gained None
+    assert results_by_driver[99]["grid_position"] is None
+    assert results_by_driver[99]["grid_position_missing"] is True
+    assert results_by_driver[99]["positions_gained"] is None
+
+

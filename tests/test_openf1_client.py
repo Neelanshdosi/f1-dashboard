@@ -241,3 +241,101 @@ def test_get_sessions_filters_by_year():
     # Verify year param was sent
     assert resp_lib.calls[0].request.url is not None
     assert "year=2024" in resp_lib.calls[0].request.url
+
+
+# ── resolve_qualifying_session helper ──────────────────────────────────────────
+
+@resp_lib.activate
+def test_resolve_qualifying_session_exact_match():
+    """Exact Qualifying match returns qualifying session_key."""
+    from ingestion.openf1_client import resolve_qualifying_session
+
+    # Step 1: race session returns meeting_key 1229
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9472, "meeting_key": 1229, "session_name": "Race"}],
+        status=200,
+    )
+    # Step 2: meeting returns qualifying session
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9468, "meeting_key": 1229, "session_name": "Qualifying"}],
+        status=200,
+    )
+
+    with _make_client() as client:
+        qual_key = resolve_qualifying_session(client, 9472)
+    assert qual_key == 9468
+
+
+@resp_lib.activate
+def test_resolve_qualifying_session_sprint_weekend_picks_qualifying():
+    """Sprint weekend with Qualifying and Sprint Qualifying picks exact 'Qualifying'."""
+    from ingestion.openf1_client import resolve_qualifying_session
+
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9500, "meeting_key": 1230, "session_name": "Race"}],
+        status=200,
+    )
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[
+            {"session_key": 9495, "meeting_key": 1230, "session_name": "Sprint Qualifying"},
+            {"session_key": 9498, "meeting_key": 1230, "session_name": "Qualifying"},
+            {"session_key": 9496, "meeting_key": 1230, "session_name": "Sprint Shootout"},
+        ],
+        status=200,
+    )
+
+    with _make_client() as client:
+        qual_key = resolve_qualifying_session(client, 9500)
+    assert qual_key == 9498
+
+
+@resp_lib.activate
+def test_resolve_qualifying_session_zero_or_multiple_matches_returns_none():
+    """Zero or multiple matches returns None and logs a warning."""
+    from ingestion.openf1_client import resolve_qualifying_session
+
+    # Zero matches
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9501, "meeting_key": 1231, "session_name": "Race"}],
+        status=200,
+    )
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[],
+        status=200,
+    )
+
+    with _make_client() as client:
+        assert resolve_qualifying_session(client, 9501) is None
+
+    # Multiple matches
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[{"session_key": 9502, "meeting_key": 1232, "session_name": "Race"}],
+        status=200,
+    )
+    resp_lib.add(
+        resp_lib.GET,
+        f"{BASE_URL}/sessions",
+        json=[
+            {"session_key": 9503, "meeting_key": 1232, "session_name": "Qualifying"},
+            {"session_key": 9504, "meeting_key": 1232, "session_name": "Qualifying"},
+        ],
+        status=200,
+    )
+
+    with _make_client() as client:
+        assert resolve_qualifying_session(client, 9502) is None
+

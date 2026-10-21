@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_race_results` (
     team_name STRING,
     team_colour STRING,
     grid_position INT64,
+    grid_source_session_key INT64,
     final_position INT64,
     positions_gained INT64,
     status STRING,

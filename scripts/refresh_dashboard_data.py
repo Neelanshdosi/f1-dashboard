@@ -389,8 +389,20 @@ def main(argv: list[str] | None = None) -> None:
         if not raw["drivers"] or not raw["laps"] or not raw["stints"]:
             raise RuntimeError(f"OpenF1 returned incomplete race data for {race_name}")
 
+        from ingestion.openf1_client import resolve_qualifying_session
+
         raw_session_result = fetch(http, "session_result", session_key)
-        raw_starting_grid = fetch(http, "starting_grid", session_key)
+        qual_key = resolve_qualifying_session(http, session_key)
+        if qual_key is not None:
+            raw_starting_grid_qual = fetch(http, "starting_grid", qual_key)
+            raw_starting_grid = []
+            for row in raw_starting_grid_qual:
+                row_copy = dict(row)
+                row_copy["session_key"] = session_key
+                row_copy["grid_source_session_key"] = qual_key
+                raw_starting_grid.append(row_copy)
+        else:
+            raw_starting_grid = []
 
         driver_fields = (
             "driver_number", "session_key", "meeting_key", "broadcast_name",

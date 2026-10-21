@@ -1,0 +1,142 @@
+[
+  {
+    "position": 1,
+    "driver_number": 1,
+    "lap_duration": 89.179,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 2,
+    "driver_number": 16,
+    "lap_duration": 89.407,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 3,
+    "driver_number": 63,
+    "lap_duration": 89.485,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 4,
+    "driver_number": 55,
+    "lap_duration": 89.507,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 5,
+    "driver_number": 11,
+    "lap_duration": 89.537,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 6,
+    "driver_number": 14,
+    "lap_duration": 89.542,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 7,
+    "driver_number": 4,
+    "lap_duration": 89.614,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 8,
+    "driver_number": 81,
+    "lap_duration": 89.683,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 9,
+    "driver_number": 44,
+    "lap_duration": 89.71,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 10,
+    "driver_number": 27,
+    "lap_duration": 90.502,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 11,
+    "driver_number": 22,
+    "lap_duration": 90.129,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 12,
+    "driver_number": 18,
+    "lap_duration": 90.2,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 13,
+    "driver_number": 23,
+    "lap_duration": 90.221,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 14,
+    "driver_number": 3,
+    "lap_duration": 90.278,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 15,
+    "driver_number": 20,
+    "lap_duration": 90.529,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 16,
+    "driver_number": 77,
+    "lap_duration": 90.756,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 17,
+    "driver_number": 24,
+    "lap_duration": 90.757,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 18,
+    "driver_number": 2,
+    "lap_duration": 90.77,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 19,
+    "driver_number": 31,
+    "lap_duration": 90.793,
+    "meeting_key": 1229,
+    "session_key": 9468
+  },
+  {
+    "position": 20,
+    "driver_number": 10,
+    "lap_duration": 90.948,
+    "meeting_key": 1229,
+    "session_key": 9468
+  }
+]

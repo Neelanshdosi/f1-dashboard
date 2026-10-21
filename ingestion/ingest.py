@@ -35,7 +35,7 @@ from dotenv import load_dotenv
 from ingestion.config_loader import load_config
 from ingestion.gcs_uploader import upload
 from ingestion.logger import IngestionTimer, get_logger
-from ingestion.openf1_client import OpenF1Client
+from ingestion.openf1_client import OpenF1Client, resolve_qualifying_session
 from ingestion.rate_limiter import RateLimiter
 
 
@@ -134,6 +134,25 @@ def _ingest_session(
             data = _fetch_car_data_per_driver(
                 client, session_key, drivers_cache, car_data_cap, log
             )
+        elif endpoint == "starting_grid":
+            qual_key = resolve_qualifying_session(client, session_key)
+            if qual_key is not None:
+                with IngestionTimer(log, f"fetch starting_grid qual_session={qual_key} for race={session_key}"):
+                    data = client.get("starting_grid", params={"session_key": qual_key})
+                # Rewrite each record so session_key = race session_key, and grid_source_session_key = qual_key
+                rewritten = []
+                for row in data:
+                    row_copy = dict(row)
+                    row_copy["session_key"] = session_key
+                    row_copy["grid_source_session_key"] = qual_key
+                    rewritten.append(row_copy)
+                data = rewritten
+            else:
+                log.warning(
+                    "Could not resolve qualifying session for race session_key=%s, skipping grid fetch",
+                    session_key,
+                )
+                data = []
         else:
             params: dict[str, Any] = {"session_key": session_key}
             row_cap = None

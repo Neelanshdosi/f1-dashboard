@@ -95,22 +95,25 @@ Driver status in `agg_race_results` is evaluated strictly in the following order
 4. `final_position is not null` → `"Finished"` (lapped finishers are classified as `"Finished"`, with `laps_down` populated)
 5. Otherwise (including drivers with no session result row) → `"Unclassified"`
 
-#### OpenF1 Starting Grid Endpoint Coverage
-When querying `/v1/starting_grid` by `session_key`, 1 of 11 probed sessions returned rows (probed on 2026-10-21).
+#### OpenF1 Starting Grid Endpoint Coverage & Resolution
+The OpenF1 beta endpoint `/v1/starting_grid` keys grid data to the **Qualifying** session of a race weekend rather than the Race session. Direct queries with a Race `session_key` return HTTP 404 (`{"detail":"No results found."}`). The ingestion pipeline and dashboard refresh resolve the corresponding Qualifying session (`session_name == "Qualifying"`) via `/v1/sessions?meeting_key=<M>&session_name=Qualifying`, fetch the starting grid under that qualifying session key, and rewrite records to the race `session_key` while recording `grid_source_session_key`.
 
-| Session Key | Year | Meeting / Grand Prix | Session Type | HTTP Status | Rows Returned |
+| Race Session Key | Qualifying Session Key | Year | Meeting / Grand Prix | HTTP Status | Starting Grid Rows |
 |---|---|---|---|---|---:|
-| `7783` | 2023 | Australian Grand Prix | Qualifying | 200 | 18 |
-| `9158` | 2023 | Singapore Grand Prix | Practice 1 | 404 (`{"detail":"No results found."}`) | 0 |
-| `9197` | 2023 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9472` | 2024 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9480` | 2024 | Saudi Arabian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9662` | 2024 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9693` | 2025 | Australian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9839` | 2025 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9947` | 2025 | British Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `9979` | 2025 | Monaco Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
-| `10014` | 2025 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9472` | `9468` | 2024 | Bahrain Grand Prix | 200 | 20 |
+| `9662` | `9658` | 2024 | Abu Dhabi Grand Prix | 200 | 20 |
+| `9693` | None | 2025 | Australian Grand Prix | N/A (Missing) | 0 |
+| `9947` | None | 2025 | British Grand Prix | N/A (Missing) | 0 |
+| `9979` | None | 2025 | Monaco Grand Prix | N/A (Missing) | 0 |
+| `10014` | None | 2025 | Bahrain Grand Prix | N/A (Missing) | 0 |
+| `9839` | None | 2025 | Abu Dhabi Grand Prix | N/A (Missing) | 0 |
+
+> **Starting Grid Penalties Verification**:
+> Verified against official FIA starting grid and qualifying classification for session 9662 (2024 Abu Dhabi Grand Prix, Qualifying session 9658):
+> - Nico Hülkenberg qualified P4 (82.748s), but received a 3-place grid penalty; `/v1/starting_grid` correctly reflects `position: 7`.
+> - Charles Leclerc qualified P14 (83.152s), but received a 10-place grid penalty for replacing energy store components; `/v1/starting_grid` correctly reflects `position: 19`.
+> - Max Verstappen (qualified P5 -> starts P4), Pierre Gasly (qualified P6 -> starts P5), and George Russell (qualified P7 -> starts P6) all moved up accordingly.
+> **Finding**: OpenF1 `/v1/starting_grid` positions **include post-qualifying grid penalties**.
 
 ## Data quality
 

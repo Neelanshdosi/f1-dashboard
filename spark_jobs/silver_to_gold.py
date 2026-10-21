@@ -543,12 +543,14 @@ def compute_race_results(
                 "session_key": (None, "int"),
                 "driver_number": (None, "int"),
                 "position": (None, "int"),
+                "grid_source_session_key": (None, "int"),
             },
         )
         grid_sel = df_grid.select(
             F.col("session_key").cast(IntegerType()),
             F.col("driver_number").cast(IntegerType()),
             F.col("position").cast(IntegerType()).alias("grid_position"),
+            F.col("grid_source_session_key").cast(IntegerType()),
         ).dropDuplicates(["session_key", "driver_number"])
     else:
         grid_sel = None
@@ -571,9 +573,11 @@ def compute_race_results(
         joined = joined.join(grid_sel, on=["session_key", "driver_number"], how="left")
         grid_missing = F.col("grid_position").isNull()
         grid_pos_col = F.col("grid_position")
+        grid_source_col = F.col("grid_source_session_key")
     else:
         grid_missing = F.lit(True)
         grid_pos_col = F.lit(None).cast(IntegerType())
+        grid_source_col = F.lit(None).cast(IntegerType())
 
     # Join with pit counts
     if pit_counts is not None:
@@ -600,6 +604,7 @@ def compute_race_results(
 
     result = (
         joined.withColumn("grid_position", grid_pos_col)
+        .withColumn("grid_source_session_key", grid_source_col)
         .withColumn("grid_position_missing", grid_missing.cast(BooleanType()))
         .withColumn("positions_gained", positions_gained_expr)
         .withColumn("status", status_expr.cast(StringType()))
@@ -612,6 +617,7 @@ def compute_race_results(
             "team_name",
             "team_colour",
             "grid_position",
+            "grid_source_session_key",
             "final_position",
             "positions_gained",
             "status",
@@ -961,6 +967,7 @@ GOLD_TABLE_SCHEMAS = {
         ("team_name", "STRING"),
         ("team_colour", "STRING"),
         ("grid_position", "INT64"),
+        ("grid_source_session_key", "INT64"),
         ("final_position", "INT64"),
         ("positions_gained", "INT64"),
         ("status", "STRING"),
