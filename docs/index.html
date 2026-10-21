@@ -66,16 +66,50 @@
 
     <!-- Navigation Tabs -->
     <nav class="tabs-nav" aria-label="Dashboard navigation">
-      <button class="tab-btn active" data-target="view-leaderboard">🏁 Race Leaderboard</button>
+      <button class="tab-btn active" data-target="view-results" id="tab-results">🏆 Official Results</button>
+      <button class="tab-btn" data-target="view-leaderboard">🏁 Pace Leaderboard</button>
       <button class="tab-btn" data-target="view-tyre">🛞 Tyre Degradation</button>
       <button class="tab-btn" data-target="view-strategy">⏱️ Pit & Stint Matrix</button>
       <button class="tab-btn" data-target="view-weather">🌡️ Weather Impact</button>
       <button class="tab-btn" data-target="view-arch">⚙️ Data Architecture</button>
     </nav>
 
-    <!-- Tab 1: Leaderboard View -->
+    <!-- Main Views -->
     <main>
-      <section id="view-leaderboard" class="view-content active">
+      <!-- Tab 0: Official Race Results View -->
+      <section id="view-results" class="view-content active">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Final Race Classification</div>
+              <div class="panel-desc" id="results-desc">Official race finishing positions, points, and gaps.</div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Driver</th>
+                  <th>Constructor</th>
+                  <th>Status</th>
+                  <th>Grid</th>
+                  <th>+/-</th>
+                  <th>Laps</th>
+                  <th>Time / Gap</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody">
+                <!-- Populated via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 1: Leaderboard View -->
+      <section id="view-leaderboard" class="view-content">
         <div class="glass-panel">
           <div class="panel-header">
             <div>

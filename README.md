@@ -96,21 +96,21 @@ Driver status in `agg_race_results` is evaluated strictly in the following order
 5. Otherwise (including drivers with no session result row) → `"Unclassified"`
 
 #### OpenF1 Starting Grid Endpoint Coverage
-The `/v1/starting_grid` endpoint is in BETA on OpenF1. A direct probe on 2026-10-21 shows the following factual availability:
+starting_grid is a beta endpoint with sparse coverage: 1 of 11 probed sessions returned rows (probed on 2026-10-21).
 
-| Session Key | Year | Race / Grand Prix | HTTP Status | Rows Returned |
-|---|---|---|---|---:|
-| `7783` | 2023 | Spanish Grand Prix | 200 | 18 |
-| `9158` | 2023 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9197` | 2023 | Abu Dhabi Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9472` | 2024 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9480` | 2024 | Saudi Arabian Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9662` | 2024 | Abu Dhabi Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9693` | 2024 | Las Vegas Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9839` | 2025 | Australian Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9947` | 2025 | Chinese Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `9979` | 2025 | Japanese Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
-| `10014` | 2025 | Bahrain Grand Prix | 404 (`{"detail":"No results found."}`) | 0 |
+| Session Key | Year | Meeting / Grand Prix | Session Type | HTTP Status | Rows Returned |
+|---|---|---|---|---|---:|
+| `7783` | 2023 | Australian Grand Prix | Qualifying | 200 | 18 |
+| `9158` | 2023 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9197` | 2023 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9472` | 2024 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9480` | 2024 | Saudi Arabian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9662` | 2024 | Abu Dhabi Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9693` | 2024 | Las Vegas Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9839` | 2025 | Australian Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9947` | 2025 | Chinese Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `9979` | 2025 | Japanese Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
+| `10014` | 2025 | Bahrain Grand Prix | Race | 404 (`{"detail":"No results found."}`) | 0 |
 
 ## Data quality
 

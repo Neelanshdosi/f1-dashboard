@@ -835,7 +835,7 @@ def run_pipeline(
             df_stints=st_df,
             df_pit=pit_df,
         )
-        rows_in = sr_df.count() + (sg_df.count() if sg_df is not None else 0)
+        rows_in = sr_df.count()
         counts["agg_race_results"] = _process_gold_table(
             results_df, "agg_race_results", rows_in
         )

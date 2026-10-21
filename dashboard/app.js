@@ -85,11 +85,116 @@ function renderSelectedRace() {
   if (!race) return;
   document.getElementById("race-subtitle").textContent =
     `${race.name} • GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)`;
+  renderRaceResults();
   renderOverviewMetrics();
   renderLeaderboard();
   initTyreDegradationControls();
   renderStintTimelines();
   renderWeatherChart();
+}
+
+// Render Official Race Results Table
+function renderRaceResults() {
+  const tbody = document.getElementById("results-tbody");
+  const tabBtn = document.getElementById("tab-results");
+  const viewSection = document.getElementById("view-results");
+  if (!tbody || !goldData) return;
+
+  const results = raceRows("race_results");
+
+  // If no results for this race, hide the tab/view and switch to leaderboard if active
+  if (!results.length) {
+    if (tabBtn) tabBtn.style.display = "none";
+    if (viewSection && viewSection.classList.contains("active")) {
+      viewSection.classList.remove("active");
+      if (tabBtn) tabBtn.classList.remove("active");
+      const lbTab = document.querySelector('[data-target="view-leaderboard"]');
+      const lbView = document.getElementById("view-leaderboard");
+      if (lbTab) lbTab.classList.add("active");
+      if (lbView) lbView.classList.add("active");
+    }
+    return;
+  }
+
+  if (tabBtn) tabBtn.style.display = "flex";
+
+  // Ordering contract:
+  // 1. final_position ascending with nulls last
+  // 2. Among null positions: DNF (0), DSQ (1), DNS (2), Unclassified (3)
+  const statusRank = { DNF: 0, DSQ: 1, DNS: 2, Unclassified: 3 };
+  const sorted = [...results].sort((a, b) => {
+    const aHasPos = a.final_position != null;
+    const bHasPos = b.final_position != null;
+    if (aHasPos && bHasPos) return a.final_position - b.final_position;
+    if (aHasPos && !bHasPos) return -1;
+    if (!aHasPos && bHasPos) return 1;
+    const aRank = statusRank[a.status] ?? 4;
+    const bRank = statusRank[b.status] ?? 4;
+    if (aRank !== bRank) return aRank - bRank;
+    return (a.driver_number || 0) - (b.driver_number || 0);
+  });
+
+  tbody.innerHTML = "";
+  document.getElementById("results-desc").textContent =
+    `Official classified finishing results for ${sorted.length} drivers.`;
+
+  sorted.forEach((r) => {
+    const tr = document.createElement("tr");
+    const teamColour = r.team_colour ? `#${r.team_colour}` : "#94a3b8";
+    const statusClass = (r.status || "unclassified").toLowerCase();
+
+    // Position display: keeps position number if not null, otherwise "-"
+    const posDisplay = r.final_position != null ? `#${r.final_position}` : "—";
+
+    // Grid display
+    const gridDisplay = r.grid_position != null ? `P${r.grid_position}` : (r.grid_position_missing ? "PL" : "—");
+
+    // Positions gained
+    let gainedHtml = "—";
+    if (r.positions_gained != null) {
+      if (r.positions_gained > 0) {
+        gainedHtml = `<span class="pos-gain">▲ ${r.positions_gained}</span>`;
+      } else if (r.positions_gained < 0) {
+        gainedHtml = `<span class="pos-loss">▼ ${Math.abs(r.positions_gained)}</span>`;
+      } else {
+        gainedHtml = `<span class="pos-same">0</span>`;
+      }
+    }
+
+    // Gap / Time display
+    let timeGap = "—";
+    if (r.final_position === 1 && r.duration_seconds) {
+      const mins = Math.floor(r.duration_seconds / 60);
+      const secs = (r.duration_seconds % 60).toFixed(3);
+      timeGap = `${mins}:${secs.padStart(6, "0")}`;
+    } else if (r.gap_to_leader_seconds != null) {
+      timeGap = `+${r.gap_to_leader_seconds.toFixed(3)}s`;
+    } else if (r.laps_down != null) {
+      timeGap = `+${r.laps_down} ${r.laps_down === 1 ? "lap" : "laps"}`;
+    }
+
+    // Points display
+    const ptsDisplay = r.points != null ? (Number.isInteger(r.points) ? r.points : r.points.toFixed(1)) : "0";
+
+    tr.innerHTML = `
+      <td style="font-weight: 800; color: #fff;">${posDisplay}</td>
+      <td>
+        <div class="team-pill">
+          <span class="team-stripe" style="background: ${teamColour};"></span>
+          <span>${r.driver_name || `Driver ${r.driver_number}`}</span>
+          <span style="color: var(--text-muted); font-size: 11px;">(${r.name_acronym || r.driver_number})</span>
+        </div>
+      </td>
+      <td>${r.team_name || "N/A"}</td>
+      <td><span class="status-badge ${statusClass}">${r.status}</span></td>
+      <td>${gridDisplay}</td>
+      <td>${gainedHtml}</td>
+      <td>${r.number_of_laps != null ? r.number_of_laps : "—"}</td>
+      <td style="font-family: var(--font-mono); font-size: 13px;">${timeGap}</td>
+      <td style="font-weight: 800; color: #38bdf8;">${ptsDisplay}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
 // Render Top Overview Cards
@@ -110,7 +215,7 @@ function renderOverviewMetrics() {
   const totalStops = drivers.reduce((sum, d) => sum + (d.total_pit_stops || 0), 0);
   document.getElementById("metric-stops").textContent = `${totalStops} Stops`;
   document.getElementById("metric-stops-sub").textContent = `${(totalStops / drivers.length).toFixed(1)} stops / driver`;
-  const rows = ["driver_summary", "pit_strategy", "tyre_degradation", "weather_impact"]
+  const rows = ["driver_summary", "pit_strategy", "tyre_degradation", "weather_impact", "race_results"]
     .reduce((sum, key) => sum + raceRows(key).length, 0);
   document.getElementById("metric-rows").textContent = rows.toLocaleString();
   const raceLaps = Math.max(...drivers.map((driver) => driver.total_laps || 0));

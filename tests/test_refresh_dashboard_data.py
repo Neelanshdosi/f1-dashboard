@@ -114,6 +114,66 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
         }),
     ]
 
+    race_results_rows = [
+        FakeRow({
+            "session_key": 9472,
+            "driver_number": 1,
+            "driver_name": "Max Verstappen",
+            "name_acronym": "VER",
+            "team_name": "Red Bull Racing",
+            "team_colour": "3671c6",
+            "grid_position": 1,
+            "final_position": 1,
+            "positions_gained": 0,
+            "status": "Finished",
+            "total_pit_stops": 2,
+            "number_of_laps": 57,
+            "points": 26.0,
+            "duration_seconds": 5490.5,
+            "gap_to_leader_seconds": 0.0,
+            "laps_down": None,
+            "grid_position_missing": False,
+        }),
+        FakeRow({
+            "session_key": 9472,
+            "driver_number": 2,
+            "driver_name": "Logan Sargeant",
+            "name_acronym": "SAR",
+            "team_name": "Williams",
+            "team_colour": "00a0de",
+            "grid_position": 18,
+            "final_position": None,
+            "positions_gained": None,
+            "status": "DNF",
+            "total_pit_stops": 1,
+            "number_of_laps": 30,
+            "points": 0.0,
+            "duration_seconds": None,
+            "gap_to_leader_seconds": None,
+            "laps_down": None,
+            "grid_position_missing": False,
+        }),
+        FakeRow({
+            "session_key": 9472,
+            "driver_number": 31,
+            "driver_name": "Esteban Ocon",
+            "name_acronym": "OCO",
+            "team_name": "Alpine",
+            "team_colour": "0090ff",
+            "grid_position": None,
+            "final_position": 17,
+            "positions_gained": None,
+            "status": "Finished",
+            "total_pit_stops": 2,
+            "number_of_laps": 56,
+            "points": 0.0,
+            "duration_seconds": None,
+            "gap_to_leader_seconds": None,
+            "laps_down": 1,
+            "grid_position_missing": True,
+        }),
+    ]
+
     def query_side_effect(sql):
         mock_result = MagicMock()
         if "agg_driver_race_summary" in sql:
@@ -124,6 +184,8 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
             mock_result.result.return_value = pit_strat_rows
         elif "agg_weather_impact" in sql:
             mock_result.result.return_value = weather_rows
+        elif "agg_race_results" in sql:
+            mock_result.result.return_value = race_results_rows
         elif "dim_sessions" in sql:
             mock_result.result.return_value = dim_sessions_rows
         else:
@@ -142,6 +204,7 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
         "tyre_degradation",
         "pit_strategy",
         "weather_impact",
+        "race_results",
         "races",
     }
 
@@ -165,6 +228,25 @@ def test_fetch_from_bigquery_schema_and_races_sorting():
     wi = dashboard["weather_impact"][0]
     for key in ["date_utc", "air_temperature", "track_temperature", "field_avg_lap_time"]:
         assert key in wi
+
+    # Assert race_results schema and ordering contract
+    assert len(dashboard["race_results"]) == 3
+    rr = dashboard["race_results"]
+    for r in rr:
+        for key in [
+            "final_position", "status", "grid_position", "positions_gained", "points",
+            "number_of_laps", "laps_down", "gap_to_leader_seconds", "duration_seconds",
+            "grid_position_missing"
+        ]:
+            assert key in r
+    # Ordering: P1 first, P17 second, null-position DNF last
+    assert rr[0]["final_position"] == 1
+    assert rr[1]["final_position"] == 17
+    assert rr[2]["final_position"] is None
+    assert rr[2]["status"] == "DNF"
+
+    # Assert session 9693 and 10014 (no race results) have NO rows in race_results
+    assert all(r["session_key"] == 9472 for r in rr)
 
     # 3. Assert races list is sorted by date
     races = dashboard["races"]
@@ -215,6 +297,7 @@ def test_refresh_main_bigquery_mode(monkeypatch):
         "tyre_degradation": [],
         "pit_strategy": [],
         "weather_impact": [],
+        "race_results": [],
         "races": [{"session_key": 9472, "date": "2024-03-02"}],
     }
 

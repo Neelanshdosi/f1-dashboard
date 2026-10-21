@@ -41,7 +41,29 @@ GOLD_TABLE_MAP = {
     "agg_tyre_degradation": "tyre_degradation",
     "agg_pit_strategy": "pit_strategy",
     "agg_weather_impact": "weather_impact",
+    "agg_race_results": "race_results",
 }
+
+
+def sort_race_results(records: list[dict]) -> list[dict]:
+    """Ordering contract for race_results:
+
+    1. final_position ascending with nulls last
+    2. Among null positions, order status: DNF (0), DSQ (1), DNS (2), Unclassified (3), other (4)
+    3. Tie-break by driver_number ascending
+    """
+    status_order = {"DNF": 0, "DSQ": 1, "DNS": 2, "Unclassified": 3}
+
+    def sort_key(row):
+        pos = row.get("final_position")
+        has_pos = 0 if (pos is not None) else 1
+        pos_val = pos if pos is not None else 0
+        stat = row.get("status", "")
+        stat_rank = status_order.get(stat, 4)
+        drv = row.get("driver_number") or 0
+        return (has_pos, pos_val, stat_rank, drv)
+
+    return sorted(records, key=sort_key)
 
 
 def _load_dashboard_config() -> tuple[str | None, list[int]]:
@@ -72,6 +94,7 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
         "tyre_degradation": [],
         "pit_strategy": [],
         "weather_impact": [],
+        "race_results": [],
         "races": [],
     }
 
@@ -80,7 +103,7 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
 
     keys_csv = ", ".join(str(k) for k in session_keys)
 
-    # 1. Query the 4 Gold tables (with session_key filter for partition pruning)
+    # 1. Query the Gold tables (with session_key filter for partition pruning)
     for bq_table, json_key in GOLD_TABLE_MAP.items():
         query = f"""
             SELECT *
@@ -95,7 +118,19 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
                 if hasattr(v, "isoformat"):
                     record[k] = str(v)
             table_records.append(record)
-        dashboard[json_key] = table_records
+
+        if json_key == "race_results":
+            # Apply ordering contract and ensure a race with no rows is omitted entirely
+            # Group by session_key and sort each session's results
+            sessions_with_results = {r.get("session_key") for r in table_records if r.get("session_key") is not None}
+            sorted_records = []
+            for sk in session_keys:
+                if sk in sessions_with_results:
+                    session_rows = [r for r in table_records if r.get("session_key") == sk]
+                    sorted_records.extend(sort_race_results(session_rows))
+            dashboard[json_key] = sorted_records
+        else:
+            dashboard[json_key] = table_records
 
     # 2. Build races list from dim_sessions with fallback to RACE_NAMES / RACE_DATES
     sessions_by_key = {}

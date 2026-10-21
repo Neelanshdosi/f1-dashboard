@@ -472,7 +472,7 @@ def test_transform_fct_session_result_and_grid_from_real_fixtures(spark: SparkSe
         StructField("lap_duration", DoubleType(), True),
     ])
 
-    # 1. Test 9662 (Race results)
+    # 1. Test 9662 (Race results: Abu Dhabi 2024)
     raw_res_9662 = spark.read.schema(res_schema).option("multiline", "true").json(
         str(fixtures_dir / "session_result_9662.json")
     )
@@ -500,7 +500,7 @@ def test_transform_fct_session_result_and_grid_from_real_fixtures(spark: SparkSe
     assert dnf_driver["duration_seconds"] is None
     assert dnf_driver["gap_to_leader_seconds"] is None
 
-    # 2. Test 7783 (Array duration/gap case)
+    # 2. Test 7783 (Qualifying session: Australian Grand Prix 2023 - Array duration/gap case)
     raw_res_7783 = spark.read.schema(res_schema).option("multiline", "true").json(
         str(fixtures_dir / "session_result_7783.json")
     )
