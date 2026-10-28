@@ -6,13 +6,16 @@ import os
 import re
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 ROOT = Path(__file__).resolve().parents[1]
 TABLES = (
     "agg_driver_race_summary",
     "agg_tyre_degradation",
     "agg_pit_strategy",
     "agg_weather_impact",
-    "agg_driver_telemetry",
 )
 
 
