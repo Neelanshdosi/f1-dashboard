@@ -461,7 +461,22 @@ def main(argv: list[str] | None = None) -> None:
             sorted_results = sort_race_results(results_records)
             all_race_results.extend(sorted_results)
 
+        # Calculate threshold_stops_count and stop_detection_summary from silver pit
+        pit_rows = as_records(pit) if pit else []
+        thresh_count = sum(1 for p in pit_rows if p.get("stop_detection_method") == "pit_duration_threshold")
+        stop_dur_count = sum(1 for p in pit_rows if p.get("stop_detection_method") == "stop_duration")
+        if thresh_count > 0 and stop_dur_count > 0:
+            summary_method = "mixed"
+        elif thresh_count > 0:
+            summary_method = "pit_duration_threshold"
+        elif stop_dur_count > 0:
+            summary_method = "stop_duration"
+        else:
+            summary_method = "none"
+
         race_entry["has_results"] = has_results
+        race_entry["threshold_stops_count"] = thresh_count
+        race_entry["stop_detection_summary"] = summary_method
         existing_sessions[session_key] = race_entry
 
     dashboard["race_results"] = all_race_results

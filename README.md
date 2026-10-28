@@ -98,6 +98,8 @@ Driver status in `agg_race_results` is evaluated strictly in the following order
 #### OpenF1 Starting Grid Endpoint Coverage & Resolution
 The OpenF1 beta endpoint `/v1/starting_grid` keys grid data to the **Qualifying** session of a race weekend rather than the Race session. Direct queries with a Race `session_key` return HTTP 404 (`{"detail":"No results found."}`). The ingestion pipeline and dashboard refresh resolve the corresponding Qualifying session (`session_name == "Qualifying"`) via `/v1/sessions?meeting_key=<M>&session_name=Qualifying`, fetch the starting grid under that qualifying session key, and rewrite records to the race `session_key` while recording `grid_source_session_key`.
 
+Measured on 2026-10-21 via `python scripts/probe_openf1.py`:
+
 | Race Session Key | Qualifying Session Key | Year | Meeting Key | Session Name | HTTP Status | Starting Grid Rows |
 |---|---|---|---|---|---|---:|
 | `9472` | `9468` | 2024 | 1229 | Race | 200 | 20 |
@@ -110,6 +112,9 @@ The OpenF1 beta endpoint `/v1/starting_grid` keys grid data to the **Qualifying*
 
 > **Starting Grid Penalties Note**:
 > OpenF1 grid positions may differ from qualifying order; whether they include penalties was observed on one race and is not otherwise verified.
+
+> **Pit Stop Detection Rule Note**:
+> Stops are counted when OpenF1 gives a stop time, or when the pit-lane duration is at least 18 s. The 18 s value was chosen from observed data and may misclassify very short or very long pit-lane passes.
 
 ## Data quality
 

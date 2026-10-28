@@ -99,8 +99,13 @@ def compute_driver_race_summary(
         F.first("meeting_key").cast(IntegerType()).alias("meeting_key"),
     )
 
-    # Pit stop stats
-    pit_stats = df_pit.groupBy("session_key", "driver_number").agg(
+    # Pit stop stats (counted stops only)
+    if "is_counted_stop" in df_pit.columns:
+        counted_pit = df_pit.filter(F.col("is_counted_stop"))
+    else:
+        counted_pit = df_pit
+
+    pit_stats = counted_pit.groupBy("session_key", "driver_number").agg(
         F.count("lap_number").cast(IntegerType()).alias("total_pit_stops"),
         F.round(F.coalesce(F.sum("pit_duration"), F.lit(0.0)), 2).alias("total_pit_duration"),
     )
@@ -253,13 +258,17 @@ def compute_pit_strategy(
     )
 
     # Join pit info where pit lap equals stint lap_end
-    pit_renamed = df_pit.select(
+    pit_cols = [
         F.col("session_key").alias("p_session_key"),
         F.col("driver_number").alias("p_driver_number"),
         F.col("lap_number").alias("pit_lap"),
         "pit_duration",
         "stop_duration",
-    )
+    ]
+    if "is_counted_stop" in df_pit.columns:
+        pit_cols.append("is_counted_stop")
+
+    pit_renamed = df_pit.select(*pit_cols)
 
     cond = [
         stints_ext["session_key"] == pit_renamed["p_session_key"],
@@ -267,8 +276,21 @@ def compute_pit_strategy(
         stints_ext["lap_end"] == pit_renamed["pit_lap"],
     ]
 
+    joined_stints = stints_ext.join(pit_renamed, on=cond, how="left")
+
+    # Strategy stint number: cumulative count of counted pit stops strictly before this stint
+    # Each counted pit stop at stint i's lap_end advances the strategy stint number for stint i+1
+    from pyspark.sql.window import Window
+    w = Window.partitionBy("session_key", "driver_number").orderBy("stint_number").rowsBetween(Window.unboundedPreceding, -1)
+    if "is_counted_stop" in joined_stints.columns:
+        counted_flag = F.when(F.col("is_counted_stop"), 1).otherwise(0)
+    else:
+        counted_flag = F.when(F.col("pit_lap").isNotNull(), 1).otherwise(0)
+
+    strat_num = F.coalesce(F.sum(counted_flag).over(w), F.lit(0)) + 1
+
     joined = (
-        stints_ext.join(pit_renamed, on=cond, how="left")
+        joined_stints.withColumn("strategy_stint_number", strat_num.cast("int"))
         .join(
             df_drivers.select(
                 "session_key",
@@ -285,6 +307,7 @@ def compute_pit_strategy(
             "driver_name",
             "team_name",
             F.col("stint_number").cast("int"),
+            F.col("strategy_stint_number").cast("int"),
             "compound",
             F.col("lap_start").cast("int"),
             F.col("lap_end").cast("int"),
@@ -555,10 +578,15 @@ def compute_race_results(
     else:
         grid_sel = None
 
-    # 4. Pit stops count
+    # 4. Pit stops count (counted stops only)
     if df_pit is not None and "session_key" in df_pit.columns and "driver_number" in df_pit.columns:
+        counted_df = (
+            df_pit.filter(F.col("is_counted_stop"))
+            if "is_counted_stop" in df_pit.columns
+            else df_pit
+        )
         pit_counts = (
-            df_pit.filter(F.col("session_key").isNotNull() & F.col("driver_number").isNotNull())
+            counted_df.filter(F.col("session_key").isNotNull() & F.col("driver_number").isNotNull())
             .groupBy("session_key", "driver_number")
             .agg(F.count(F.lit(1)).cast(IntegerType()).alias("total_pit_stops"))
         )
@@ -925,6 +953,7 @@ GOLD_TABLE_SCHEMAS = {
         ("driver_name", "STRING"),
         ("team_name", "STRING"),
         ("stint_number", "INT64"),
+        ("strategy_stint_number", "INT64"),
         ("compound", "STRING"),
         ("lap_start", "INT64"),
         ("lap_end", "INT64"),

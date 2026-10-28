@@ -193,7 +193,22 @@ function renderStrategyChips(driverName, raceStints) {
 
   if (!driverStints.length) return "—";
 
-  return driverStints.map((stint, idx) => {
+  // If strategy_stint_number is available, group segments by strategy_stint_number
+  // and take the compound of the LAST raw stint in each segment.
+  const hasStrategyStints = driverStints.some((s) => s.strategy_stint_number != null);
+  let stintsToRender;
+  if (hasStrategyStints) {
+    const segments = new Map();
+    driverStints.forEach((stint) => {
+      const segId = stint.strategy_stint_number ?? stint.stint_number;
+      segments.set(segId, stint); // Overwrites earlier stints in segment with the latest
+    });
+    stintsToRender = Array.from(segments.values());
+  } else {
+    stintsToRender = driverStints;
+  }
+
+  return stintsToRender.map((stint, idx) => {
     const comp = (stint.compound || "UNKNOWN").toUpperCase();
     const initial = comp.charAt(0) || "?";
     let cls = "soft";
@@ -202,7 +217,7 @@ function renderStrategyChips(driverName, raceStints) {
     else if (comp.includes("INTER")) cls = "intermediate";
     else if (comp.includes("WET")) cls = "wet";
 
-    const chipHtml = `<span class="compound-chip ${cls}" title="${comp} (Stint ${stint.stint_number || idx + 1})" aria-label="${comp}">${initial}</span>`;
+    const chipHtml = `<span class="compound-chip ${cls}" title="${comp} (Stint ${stint.strategy_stint_number || stint.stint_number || idx + 1})" aria-label="${comp}">${initial}</span>`;
     return idx === 0 ? chipHtml : `<span class="strategy-sep" aria-hidden="true">&rsaquo;</span>${chipHtml}`;
   }).join("");
 }
@@ -263,6 +278,11 @@ function renderSelectedRace() {
   if (pill) {
     const genAt = goldData.meta?.generated_at;
     pill.setAttribute("title", genAt ? `Generated at: ${genAt}` : "OpenF1 Gold Snapshot");
+  }
+
+  const threshFootnote = document.getElementById("pit-threshold-footnote");
+  if (threshFootnote) {
+    threshFootnote.style.display = (race.threshold_stops_count && race.threshold_stops_count > 0) ? "block" : "none";
   }
 
   renderRaceResults();

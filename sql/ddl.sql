@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `f1_analytics.agg_pit_strategy` (
     driver_name STRING,
     team_name STRING,
     stint_number INT64,
+    strategy_stint_number INT64,
     compound STRING,
     lap_start INT64,
     lap_end INT64,

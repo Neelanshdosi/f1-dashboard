@@ -256,9 +256,9 @@ def transform_fct_laps(df_laps: DataFrame, df_stints: DataFrame | None = None) -
     return cleaned
 
 
-def transform_fct_pit(df: DataFrame) -> DataFrame:
+def transform_fct_pit(df: DataFrame, threshold_seconds: float = 18.0) -> DataFrame:
     from pyspark.sql import functions as F
-    from pyspark.sql.types import DoubleType, IntegerType
+    from pyspark.sql.types import BooleanType, DoubleType, IntegerType, StringType
 
     date_col = "date" if "date" in df.columns else "date_start"
     df = _ensure_optional_columns(
@@ -271,6 +271,20 @@ def transform_fct_pit(df: DataFrame) -> DataFrame:
             "lane_duration": (None, "double"),
         },
     )
+
+    is_counted = F.col("stop_duration").isNotNull() | (
+        F.col("pit_duration").isNotNull() & (F.col("pit_duration") >= F.lit(threshold_seconds))
+    )
+
+    method_col = (
+        F.when(F.col("stop_duration").isNotNull(), F.lit("stop_duration"))
+        .when(
+            F.col("pit_duration").isNotNull() & (F.col("pit_duration") >= F.lit(threshold_seconds)),
+            F.lit("pit_duration_threshold"),
+        )
+        .otherwise(F.lit("not_counted"))
+    )
+
     transformed = (
         df.withColumn("session_key", F.col("session_key").cast(IntegerType()))
         .withColumn("meeting_key", F.col("meeting_key").cast(IntegerType()))
@@ -280,6 +294,8 @@ def transform_fct_pit(df: DataFrame) -> DataFrame:
         .withColumn("pit_duration", F.col("pit_duration").cast(DoubleType()))
         .withColumn("stop_duration", F.col("stop_duration").cast(DoubleType()))
         .withColumn("lane_duration", F.col("lane_duration").cast(DoubleType()))
+        .withColumn("is_counted_stop", is_counted.cast(BooleanType()))
+        .withColumn("stop_detection_method", method_col.cast(StringType()))
         .select(
             "session_key",
             "meeting_key",
@@ -289,6 +305,8 @@ def transform_fct_pit(df: DataFrame) -> DataFrame:
             "pit_duration",
             "stop_duration",
             "lane_duration",
+            "is_counted_stop",
+            "stop_detection_method",
         )
         .dropDuplicates(["session_key", "driver_number", "lap_number"])
     )
