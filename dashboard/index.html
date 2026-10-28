@@ -114,6 +114,48 @@
             </table>
           </div>
           <p class="table-caption-text">Results and grid as reported by OpenF1 (beta endpoints). Pace ranking is shown separately.</p>
+
+          <!-- Grid vs Finish Slope Chart Panel (Task 5.2) -->
+          <div id="grid-vs-finish-panel" class="glass-panel" style="margin-top: 24px; padding-top: 20px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Starting Grid vs Finishing Position</div>
+                <div class="panel-desc">Position evolution from qualifying starting grid to checkered flag.</div>
+              </div>
+            </div>
+
+            <div class="grid-finish-layout">
+              <div class="slope-chart-wrapper">
+                <div class="slope-chart-header">
+                  <span class="slope-col-label">GRID</span>
+                  <span class="slope-col-label">FINISH</span>
+                </div>
+                <div id="slope-chart-container" class="slope-svg-container" style="position: relative;">
+                  <svg id="slope-chart-svg" viewBox="0 0 500 460" preserveAspectRatio="xMidYMid meet" aria-label="Starting grid to finishing position slope chart"></svg>
+                  <div id="slope-tooltip" class="slope-tooltip" style="display: none;" role="tooltip"></div>
+                </div>
+                <div id="slope-not-shown" class="slope-not-shown" style="display: none;"></div>
+              </div>
+
+              <div class="movers-sidebar">
+                <div class="movers-card">
+                  <div class="movers-title">
+                    <span class="pos-gain">▲</span> Biggest Movers (Gains)
+                  </div>
+                  <div id="movers-gains-list" class="movers-list"></div>
+                </div>
+
+                <div class="movers-card">
+                  <div class="movers-title">
+                    <span class="pos-loss">▼</span> Biggest Movers (Losses)
+                  </div>
+                  <div id="movers-losses-list" class="movers-list"></div>
+                </div>
+              </div>
+            </div>
+
+            <p class="table-caption-text">Grid positions are as reported by OpenF1 (qualifying session data). Whether they include grid penalties is not independently verified.</p>
+          </div>
         </div>
       </section>
 

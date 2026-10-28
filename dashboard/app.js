@@ -365,7 +365,220 @@ function renderRaceResults() {
     `;
     tbody.appendChild(tr);
   });
+
+  renderGridVsFinish(results);
 }
+
+// Render Grid vs Finish Slope Chart and Biggest Movers (Task 5.2)
+function renderGridVsFinish(results) {
+  const panel = document.getElementById("grid-vs-finish-panel");
+  if (!panel) return;
+
+  const hasGrid = results && results.some((r) => r.grid_position != null);
+  if (!hasGrid) {
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+
+  const svg = document.getElementById("slope-chart-svg");
+  const tooltip = document.getElementById("slope-tooltip");
+  const notShownEl = document.getElementById("slope-not-shown");
+  const gainsList = document.getElementById("movers-gains-list");
+  const lossesList = document.getElementById("movers-losses-list");
+
+  const validDrivers = results.filter((r) => r.grid_position != null && r.final_position != null);
+
+  if (svg) {
+    svg.innerHTML = "";
+    const minPos = 1;
+    const maxPos = 20;
+    const topY = 30;
+    const bottomY = 430;
+    const x1 = 70;
+    const x2 = 430;
+    const getY = (p) => topY + ((p - minPos) / (maxPos - minPos)) * (bottomY - topY);
+
+    // Background horizontal guide lines (every 5 positions)
+    [1, 5, 10, 15, 20].forEach((p) => {
+      const y = getY(p);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(x1));
+      line.setAttribute("y1", String(y));
+      line.setAttribute("x2", String(x2));
+      line.setAttribute("y2", String(y));
+      line.setAttribute("stroke", "rgba(255, 255, 255, 0.05)");
+      line.setAttribute("stroke-dasharray", "3 3");
+      svg.appendChild(line);
+
+      const labelL = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      labelL.setAttribute("x", String(x1 - 28));
+      labelL.setAttribute("y", String(y + 3));
+      labelL.setAttribute("text-anchor", "end");
+      labelL.setAttribute("font-size", "10");
+      labelL.setAttribute("font-family", "var(--font-mono)");
+      labelL.setAttribute("fill", "rgba(148, 163, 184, 0.4)");
+      labelL.textContent = `P${p}`;
+      svg.appendChild(labelL);
+
+      const labelR = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      labelR.setAttribute("x", String(x2 + 28));
+      labelR.setAttribute("y", String(y + 3));
+      labelR.setAttribute("text-anchor", "start");
+      labelR.setAttribute("font-size", "10");
+      labelR.setAttribute("font-family", "var(--font-mono)");
+      labelR.setAttribute("fill", "rgba(148, 163, 184, 0.4)");
+      labelR.textContent = `P${p}`;
+      svg.appendChild(labelR);
+    });
+
+    const allGroups = [];
+
+    validDrivers.forEach((r) => {
+      const y1 = getY(r.grid_position);
+      const y2 = getY(r.final_position);
+      const teamColour = r.team_colour ? `#${r.team_colour}` : "#94a3b8";
+
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("class", "slope-line-group");
+      g.setAttribute("tabindex", "0");
+      g.setAttribute("role", "img");
+      const gainedNum = r.positions_gained || 0;
+      const gainedStr = gainedNum > 0 ? `+${gainedNum}` : (gainedNum < 0 ? String(gainedNum) : "0");
+      g.setAttribute(
+        "aria-label",
+        `${r.driver_name}: grid P${r.grid_position} -> finish P${r.final_position} (${gainedStr})`
+      );
+
+      // Smooth bezier curve connecting grid and finish
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M ${x1} ${y1} C ${x1 + 130} ${y1}, ${x2 - 130} ${y2}, ${x2} ${y2}`);
+      path.setAttribute("stroke", teamColour);
+      path.setAttribute("stroke-width", "2.5");
+      path.setAttribute("fill", "none");
+      path.setAttribute("opacity", "0.75");
+      g.appendChild(path);
+
+      // Circles at endpoints
+      const c1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c1.setAttribute("cx", String(x1));
+      c1.setAttribute("cy", String(y1));
+      c1.setAttribute("r", "3.5");
+      c1.setAttribute("fill", teamColour);
+      g.appendChild(c1);
+
+      const c2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c2.setAttribute("cx", String(x2));
+      c2.setAttribute("cy", String(y2));
+      c2.setAttribute("r", "3.5");
+      c2.setAttribute("fill", teamColour);
+      g.appendChild(c2);
+
+      // Acronym labels
+      const t1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t1.setAttribute("x", String(x1 - 8));
+      t1.setAttribute("y", String(y1 + 4));
+      t1.setAttribute("text-anchor", "end");
+      t1.setAttribute("font-size", "10");
+      t1.setAttribute("font-family", "var(--font-mono)");
+      t1.setAttribute("font-weight", "600");
+      t1.setAttribute("fill", "#cbd5e1");
+      t1.textContent = r.name_acronym || String(r.driver_number);
+      g.appendChild(t1);
+
+      const t2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t2.setAttribute("x", String(x2 + 8));
+      t2.setAttribute("y", String(y2 + 4));
+      t2.setAttribute("text-anchor", "start");
+      t2.setAttribute("font-size", "10");
+      t2.setAttribute("font-family", "var(--font-mono)");
+      t2.setAttribute("font-weight", "600");
+      t2.setAttribute("fill", "#cbd5e1");
+      t2.textContent = r.name_acronym || String(r.driver_number);
+      g.appendChild(t2);
+
+      const onHighlight = () => {
+        allGroups.forEach((other) => {
+          if (other !== g) other.classList.add("dimmed");
+        });
+        g.classList.add("highlight");
+        svg.appendChild(g);
+        if (tooltip) {
+          tooltip.textContent = `${r.driver_name}: grid P${r.grid_position} -> finish P${r.final_position} (${gainedStr})`;
+          tooltip.style.display = "block";
+        }
+      };
+
+      const onUnHighlight = () => {
+        allGroups.forEach((other) => other.classList.remove("dimmed"));
+        g.classList.remove("highlight");
+        if (tooltip) tooltip.style.display = "none";
+      };
+
+      g.addEventListener("mouseenter", onHighlight);
+      g.addEventListener("mouseleave", onUnHighlight);
+      g.addEventListener("focus", onHighlight);
+      g.addEventListener("blur", onUnHighlight);
+
+      svg.appendChild(g);
+      allGroups.push(g);
+    });
+  }
+
+  // Drivers omitted
+  if (notShownEl) {
+    const notShown = results.filter((r) => r.grid_position == null || r.final_position == null);
+    if (notShown.length > 0) {
+      const noFinish = notShown.filter((r) => r.final_position == null).map((r) => r.name_acronym || r.driver_name);
+      const noGrid = notShown.filter((r) => r.grid_position == null).map((r) => r.name_acronym || r.driver_name);
+      const parts = [];
+      if (noFinish.length) parts.push(`${noFinish.join(", ")} (no classified finish)`);
+      if (noGrid.length) parts.push(`${noGrid.join(", ")} (no grid position)`);
+      notShownEl.textContent = `Not shown: ${parts.join("; ")}`;
+      notShownEl.style.display = "block";
+    } else {
+      notShownEl.style.display = "none";
+    }
+  }
+
+  // Biggest movers
+  const classifiedMovers = results.filter((r) => r.final_position != null && r.positions_gained != null);
+  const gains = [...classifiedMovers]
+    .sort((a, b) => b.positions_gained - a.positions_gained || (a.driver_number || 0) - (b.driver_number || 0))
+    .slice(0, 3);
+  const losses = [...classifiedMovers]
+    .sort((a, b) => a.positions_gained - b.positions_gained || (a.driver_number || 0) - (b.driver_number || 0))
+    .slice(0, 3);
+
+  const renderMoverItem = (r, isGain) => {
+    const teamColour = r.team_colour ? `#${r.team_colour}` : "#94a3b8";
+    const badgeClass = isGain ? "pos-gain" : "pos-loss";
+    const badgeText = isGain ? `▲ ${r.positions_gained}` : `▼ ${Math.abs(r.positions_gained)}`;
+    return `
+      <div class="mover-item">
+        <div class="mover-driver">
+          <span class="team-stripe" style="background: ${teamColour};"></span>
+          <span>${r.driver_name}</span>
+          <span style="color: var(--text-muted); font-size: 11px;">(${r.name_acronym || r.driver_number})</span>
+        </div>
+        <span class="mover-badge ${badgeClass}">${badgeText}</span>
+      </div>
+    `;
+  };
+
+  if (gainsList) {
+    gainsList.innerHTML = gains.length
+      ? gains.map((r) => renderMoverItem(r, true)).join("")
+      : '<div style="color: var(--text-muted); font-size: 12px;">No position gains</div>';
+  }
+
+  if (lossesList) {
+    lossesList.innerHTML = losses.length
+      ? losses.map((r) => renderMoverItem(r, false)).join("")
+      : '<div style="color: var(--text-muted); font-size: 12px;">No position losses</div>';
+  }
+}
+
 
 
 // Render Top Overview Cards

@@ -701,6 +701,159 @@ th.sortable[aria-sort="descending"] .sort-icon::after {
   margin-bottom: 20px;
 }
 
+/* Grid vs Finish Slope Chart & Movers */
+.grid-finish-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 16px;
+}
+
+.slope-chart-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.slope-chart-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 40px 10px 40px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.slope-col-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+}
+
+.slope-svg-container {
+  width: 100%;
+}
+
+.slope-svg-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.slope-line-group {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.2s ease;
+}
+
+.slope-line-group path {
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.slope-line-group.dimmed {
+  opacity: 0.15;
+}
+
+.slope-line-group.highlight path {
+  stroke-width: 4 !important;
+  opacity: 1 !important;
+}
+
+.slope-line-group.highlight circle {
+  r: 5 !important;
+}
+
+.slope-line-group.highlight text {
+  font-weight: 800 !important;
+  fill: #fff !important;
+}
+
+.slope-tooltip {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 24, 38, 0.95);
+  border: 1px solid var(--f1-red);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px var(--f1-red-glow);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.slope-not-shown {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  font-style: italic;
+  padding: 0 8px;
+}
+
+.movers-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.movers-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.movers-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.movers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mover-driver {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.mover-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   header {
@@ -729,6 +882,9 @@ th.sortable[aria-sort="descending"] .sort-icon::after {
   .timeline-track {
     width: 100%;
   }
+  .grid-finish-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -736,3 +892,4 @@ th.sortable[aria-sort="descending"] .sort-icon::after {
     grid-template-columns: 1fr;
   }
 }
+
