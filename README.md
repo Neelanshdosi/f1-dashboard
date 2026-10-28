@@ -7,7 +7,7 @@ An OpenF1 data pipeline that ingests race sessions, transforms them with PySpark
 
 ## Live dashboard
 
-**Dashboard URL:** TODO(owner): add the deployed Vercel or GitHub Pages URL.
+**Dashboard URL:** https://f1-dashboard-five-roan.vercel.app/#race=9839
 
 The static dashboard presents race results, starting grid vs finishing position slope charts, pit stop & tyre stint timelines, pace rankings, tyre degradation curves, and weather observations.
 
