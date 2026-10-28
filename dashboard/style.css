@@ -437,7 +437,8 @@ tr:hover td {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .strategy-sep {

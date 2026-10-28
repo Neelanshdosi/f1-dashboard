@@ -392,11 +392,9 @@ function renderSelectedRace() {
     bigquery: "BigQuery Gold",
     api: "OpenF1 snapshot (API mode)",
   };
-  const metaSource = goldData.meta?.source || "bigquery";
-  const sourceLabel = sourceMap[metaSource] || metaSource;
-  const raceDateStr = race.date ? ` (${race.date})` : "";
-  document.getElementById("race-subtitle").textContent =
-    `${race.name}${raceDateStr} • ${sourceLabel}`;
+  const metaSource = goldData.meta?.source;
+  const sourceLabel = sourceMap[metaSource] || metaSource || "—";
+  document.getElementById("race-subtitle").textContent = sourceLabel;
 
   const pill = document.getElementById("header-status-pill");
   if (pill) {
@@ -523,7 +521,7 @@ function renderRaceResults() {
 
   tbody.innerHTML = "";
   document.getElementById("results-desc").textContent =
-    `Official classified finishing results for ${results.length} drivers.`;
+    "Finishing order as reported by OpenF1 (beta endpoint)";
 
   const raceStints = raceRows("pit_strategy");
 
@@ -536,10 +534,8 @@ function renderRaceResults() {
       <td>${gained.html}</td>
     ` : "";
     const stratChips = renderStrategyChips(r.driver_name, raceStints);
-    const pitStopsDisplay = r.total_pit_stops != null ? `
-      <div style="font-weight: 700;">${r.total_pit_stops}</div>
-      ${stratChips !== "—" ? `<div class="strategy-chips" style="margin-top: 4px;">${stratChips}</div>` : ""}
-    ` : "—";
+    const strategyCell = stratChips !== "—" ? `<div class="strategy-chips">${stratChips}</div>` : "—";
+    const pitStopsDisplay = r.total_pit_stops != null ? String(r.total_pit_stops) : "—";
 
     tr.innerHTML = `
       <td style="font-weight: 800; color: #fff;">${formatFinalPosition(r.final_position)}</td>
@@ -553,7 +549,8 @@ function renderRaceResults() {
       <td>${r.team_name || "—"}</td>
       ${gridCells}
       <td>${formatStatusBadge(r.status, r.laps_down)}</td>
-      <td>${pitStopsDisplay}</td>
+      <td>${strategyCell}</td>
+      <td style="font-weight: 700;">${pitStopsDisplay}</td>
       <td style="font-family: var(--font-mono); font-size: 13px;">${formatTimeGap(r)}</td>
       <td>${r.number_of_laps != null ? r.number_of_laps : "—"}</td>
       <td style="font-weight: 800; color: #38bdf8;">${formatPoints(r.points)}</td>

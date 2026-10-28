@@ -39,6 +39,7 @@ CONTRACT_FIELDS = {
         "stop_detection_summary",
     ],
     "meta": [
+        "source",
         "races_with_results",
         "races_with_grid",
     ],

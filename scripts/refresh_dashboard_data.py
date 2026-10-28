@@ -180,6 +180,7 @@ def fetch_from_bigquery(bq_client, project_id: str, session_keys: list[int]) -> 
         }
     )
     dashboard["meta"] = {
+        "source": "bigquery",
         "races_with_results": races_with_results,
         "races_with_grid": races_with_grid,
     }
@@ -494,6 +495,7 @@ def main(argv: list[str] | None = None) -> None:
             }
     )
     existing_meta = dashboard.get("meta", {})
+    existing_meta["source"] = args.source
     existing_meta["races_with_results"] = races_with_results
     existing_meta["races_with_grid"] = races_with_grid
     dashboard["meta"] = existing_meta

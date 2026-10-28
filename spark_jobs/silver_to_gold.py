@@ -273,7 +273,10 @@ def compute_pit_strategy(
     cond = [
         stints_ext["session_key"] == pit_renamed["p_session_key"],
         stints_ext["driver_number"] == pit_renamed["p_driver_number"],
-        stints_ext["lap_end"] == pit_renamed["pit_lap"],
+        (
+            (stints_ext["lap_end"] == pit_renamed["pit_lap"])
+            | (stints_ext["lap_end"] + 1 == pit_renamed["pit_lap"])
+        ),
     ]
 
     joined_stints = stints_ext.join(pit_renamed, on=cond, how="left")

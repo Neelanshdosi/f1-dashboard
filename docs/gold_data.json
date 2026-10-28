@@ -3938,7 +3938,7 @@
       "driver_name": "Liam LAWSON",
       "team_name": "Red Bull Racing",
       "stint_number": 5,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "INTERMEDIATE",
       "lap_start": 3,
       "lap_end": 4,
@@ -3953,7 +3953,7 @@
       "driver_name": "Liam LAWSON",
       "team_name": "Red Bull Racing",
       "stint_number": 6,
-      "strategy_stint_number": 2,
+      "strategy_stint_number": 3,
       "compound": "INTERMEDIATE",
       "lap_start": 4,
       "lap_end": 33,
@@ -3968,7 +3968,7 @@
       "driver_name": "Liam LAWSON",
       "team_name": "Red Bull Racing",
       "stint_number": 7,
-      "strategy_stint_number": 3,
+      "strategy_stint_number": 4,
       "compound": "MEDIUM",
       "lap_start": 33,
       "lap_end": 46,
@@ -4013,7 +4013,7 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "INTERMEDIATE",
       "lap_start": 3,
       "lap_end": 4,
@@ -4028,7 +4028,7 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 4,
-      "strategy_stint_number": 2,
+      "strategy_stint_number": 3,
       "compound": "INTERMEDIATE",
       "lap_start": 4,
       "lap_end": 39,
@@ -4043,7 +4043,7 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 5,
-      "strategy_stint_number": 3,
+      "strategy_stint_number": 4,
       "compound": "MEDIUM",
       "lap_start": 39,
       "lap_end": 46,
@@ -4058,7 +4058,7 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 6,
-      "strategy_stint_number": 4,
+      "strategy_stint_number": 5,
       "compound": "INTERMEDIATE",
       "lap_start": 46,
       "lap_end": 57,
@@ -4403,7 +4403,7 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 4,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "INTERMEDIATE",
       "lap_start": 3,
       "lap_end": 3,
@@ -4418,7 +4418,7 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 5,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "INTERMEDIATE",
       "lap_start": 4,
       "lap_end": 4,
@@ -4433,7 +4433,7 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 6,
-      "strategy_stint_number": 2,
+      "strategy_stint_number": 4,
       "compound": "MEDIUM",
       "lap_start": 4,
       "lap_end": 44,
@@ -4448,7 +4448,7 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 7,
-      "strategy_stint_number": 3,
+      "strategy_stint_number": 5,
       "compound": "INTERMEDIATE",
       "lap_start": 44,
       "lap_end": 57,
@@ -5398,9 +5398,9 @@
       "lap_start": 1,
       "lap_end": 27,
       "stint_length": 27,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 28,
+      "pit_duration": 24.11,
+      "stop_duration": 2.3
     },
     {
       "session_key": 9979,
@@ -5408,14 +5408,14 @@
       "driver_name": "Max VERSTAPPEN",
       "team_name": "Red Bull Racing",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 28,
       "lap_end": 76,
       "stint_length": 49,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 77,
+      "pit_duration": 23.95,
+      "stop_duration": 2.2
     },
     {
       "session_key": 9979,
@@ -5423,7 +5423,7 @@
       "driver_name": "Max VERSTAPPEN",
       "team_name": "Red Bull Racing",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "SOFT",
       "lap_start": 77,
       "lap_end": 78,
@@ -5443,9 +5443,9 @@
       "lap_start": 1,
       "lap_end": 18,
       "stint_length": 18,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 19,
+      "pit_duration": 24.55,
+      "stop_duration": 2.7
     },
     {
       "session_key": 9979,
@@ -5453,14 +5453,14 @@
       "driver_name": "Lando NORRIS",
       "team_name": "McLaren",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 19,
       "lap_end": 49,
       "stint_length": 31,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 50,
+      "pit_duration": 23.7,
+      "stop_duration": 2.2
     },
     {
       "session_key": 9979,
@@ -5468,7 +5468,7 @@
       "driver_name": "Lando NORRIS",
       "team_name": "McLaren",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 50,
       "lap_end": 78,
@@ -5488,9 +5488,9 @@
       "lap_start": 1,
       "lap_end": 0,
       "stint_length": 0,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 1,
+      "pit_duration": 37.24,
+      "stop_duration": 14.6
     },
     {
       "session_key": 9979,
@@ -5498,14 +5498,14 @@
       "driver_name": "Gabriel BORTOLETO",
       "team_name": "Kick Sauber",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 1,
       "lap_end": 25,
       "stint_length": 25,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 26,
+      "pit_duration": 24.48,
+      "stop_duration": 2.7
     },
     {
       "session_key": 9979,
@@ -5513,14 +5513,14 @@
       "driver_name": "Gabriel BORTOLETO",
       "team_name": "Kick Sauber",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "SOFT",
       "lap_start": 26,
       "lap_end": 34,
       "stint_length": 9,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 35,
+      "pit_duration": 24.25,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5528,7 +5528,7 @@
       "driver_name": "Gabriel BORTOLETO",
       "team_name": "Kick Sauber",
       "stint_number": 4,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 4,
       "compound": "MEDIUM",
       "lap_start": 35,
       "lap_end": 76,
@@ -5548,9 +5548,9 @@
       "lap_start": 1,
       "lap_end": 13,
       "stint_length": 13,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 14,
+      "pit_duration": 24.31,
+      "stop_duration": 2.7
     },
     {
       "session_key": 9979,
@@ -5558,14 +5558,14 @@
       "driver_name": "Isack HADJAR",
       "team_name": "Racing Bulls",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "SOFT",
       "lap_start": 14,
       "lap_end": 18,
       "stint_length": 5,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 19,
+      "pit_duration": 24.03,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -5573,7 +5573,7 @@
       "driver_name": "Isack HADJAR",
       "team_name": "Racing Bulls",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 19,
       "lap_end": 77,
@@ -5593,9 +5593,9 @@
       "lap_start": 1,
       "lap_end": 0,
       "stint_length": 0,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 1,
+      "pit_duration": 24.38,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5603,7 +5603,7 @@
       "driver_name": "Pierre GASLY",
       "team_name": "Alpine",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 1,
       "lap_end": 7,
@@ -5623,9 +5623,9 @@
       "lap_start": 1,
       "lap_end": 68,
       "stint_length": 68,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 69,
+      "pit_duration": 24.46,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5633,14 +5633,14 @@
       "driver_name": "Kimi ANTONELLI",
       "team_name": "Mercedes",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 69,
       "lap_end": 70,
       "stint_length": 2,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 71,
+      "pit_duration": 24.84,
+      "stop_duration": 2.3
     },
     {
       "session_key": 9979,
@@ -5648,7 +5648,7 @@
       "driver_name": "Kimi ANTONELLI",
       "team_name": "Mercedes",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 71,
       "lap_end": 75,
@@ -5668,9 +5668,9 @@
       "lap_start": 1,
       "lap_end": 15,
       "stint_length": 15,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 16,
+      "pit_duration": 25.38,
+      "stop_duration": 2.6
     },
     {
       "session_key": 9979,
@@ -5678,7 +5678,7 @@
       "driver_name": "Fernando ALONSO",
       "team_name": "Aston Martin",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 16,
       "lap_end": 36,
@@ -5698,9 +5698,9 @@
       "lap_start": 1,
       "lap_end": 21,
       "stint_length": 21,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 22,
+      "pit_duration": 23.58,
+      "stop_duration": 2.0
     },
     {
       "session_key": 9979,
@@ -5708,14 +5708,14 @@
       "driver_name": "Charles LECLERC",
       "team_name": "Ferrari",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 22,
       "lap_end": 48,
       "stint_length": 27,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 49,
+      "pit_duration": 23.68,
+      "stop_duration": 2.2
     },
     {
       "session_key": 9979,
@@ -5723,7 +5723,7 @@
       "driver_name": "Charles LECLERC",
       "team_name": "Ferrari",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 49,
       "lap_end": 78,
@@ -5743,9 +5743,9 @@
       "lap_start": 1,
       "lap_end": 16,
       "stint_length": 16,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 17,
+      "pit_duration": 23.98,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -5753,14 +5753,14 @@
       "driver_name": "Lance STROLL",
       "team_name": "Aston Martin",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 17,
       "lap_end": 63,
       "stint_length": 47,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 64,
+      "pit_duration": 25.92,
+      "stop_duration": 4.2
     },
     {
       "session_key": 9979,
@@ -5768,7 +5768,7 @@
       "driver_name": "Lance STROLL",
       "team_name": "Aston Martin",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 64,
       "lap_end": 76,
@@ -5788,9 +5788,9 @@
       "lap_start": 1,
       "lap_end": 0,
       "stint_length": 0,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 1,
+      "pit_duration": 24.53,
+      "stop_duration": 2.6
     },
     {
       "session_key": 9979,
@@ -5798,14 +5798,14 @@
       "driver_name": "Yuki TSUNODA",
       "team_name": "Red Bull Racing",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 1,
       "lap_end": 72,
       "stint_length": 72,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 73,
+      "pit_duration": 24.09,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5813,7 +5813,7 @@
       "driver_name": "Yuki TSUNODA",
       "team_name": "Red Bull Racing",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 73,
       "lap_end": 76,
@@ -5833,9 +5833,9 @@
       "lap_start": 1,
       "lap_end": 31,
       "stint_length": 31,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 32,
+      "pit_duration": 23.93,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5843,14 +5843,14 @@
       "driver_name": "Alexander ALBON",
       "team_name": "Williams",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 32,
       "lap_end": 39,
       "stint_length": 8,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 40,
+      "pit_duration": 24.19,
+      "stop_duration": 2.3
     },
     {
       "session_key": 9979,
@@ -5858,7 +5858,7 @@
       "driver_name": "Alexander ALBON",
       "team_name": "Williams",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 40,
       "lap_end": 76,
@@ -5878,9 +5878,9 @@
       "lap_start": 1,
       "lap_end": 11,
       "stint_length": 11,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 12,
+      "pit_duration": 24.07,
+      "stop_duration": 2.4
     },
     {
       "session_key": 9979,
@@ -5888,14 +5888,14 @@
       "driver_name": "Nico HULKENBERG",
       "team_name": "Kick Sauber",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 12,
       "lap_end": 43,
       "stint_length": 32,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 44,
+      "pit_duration": 24.4,
+      "stop_duration": 3.0
     },
     {
       "session_key": 9979,
@@ -5903,7 +5903,7 @@
       "driver_name": "Nico HULKENBERG",
       "team_name": "Kick Sauber",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "SOFT",
       "lap_start": 44,
       "lap_end": 76,
@@ -5923,9 +5923,9 @@
       "lap_start": 1,
       "lap_end": 30,
       "stint_length": 30,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 31,
+      "pit_duration": 24.21,
+      "stop_duration": 2.6
     },
     {
       "session_key": 9979,
@@ -5933,14 +5933,14 @@
       "driver_name": "Liam LAWSON",
       "team_name": "Racing Bulls",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "SOFT",
       "lap_start": 31,
       "lap_end": 39,
       "stint_length": 9,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 40,
+      "pit_duration": 24.32,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -5948,7 +5948,7 @@
       "driver_name": "Liam LAWSON",
       "team_name": "Racing Bulls",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 40,
       "lap_end": 77,
@@ -5968,9 +5968,9 @@
       "lap_start": 1,
       "lap_end": 15,
       "stint_length": 15,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 16,
+      "pit_duration": 25.58,
+      "stop_duration": 3.1
     },
     {
       "session_key": 9979,
@@ -5978,14 +5978,14 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 16,
       "lap_end": 27,
       "stint_length": 12,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 28,
+      "pit_duration": 24.77,
+      "stop_duration": 2.8
     },
     {
       "session_key": 9979,
@@ -5993,7 +5993,7 @@
       "driver_name": "Esteban OCON",
       "team_name": "Haas F1 Team",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 28,
       "lap_end": 77,
@@ -6013,9 +6013,9 @@
       "lap_start": 1,
       "lap_end": 12,
       "stint_length": 12,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 13,
+      "pit_duration": 24.36,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -6023,14 +6023,14 @@
       "driver_name": "Franco COLAPINTO",
       "team_name": "Alpine",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 13,
       "lap_end": 25,
       "stint_length": 13,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 26,
+      "pit_duration": 24.5,
+      "stop_duration": 2.7
     },
     {
       "session_key": 9979,
@@ -6038,7 +6038,7 @@
       "driver_name": "Franco COLAPINTO",
       "team_name": "Alpine",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 26,
       "lap_end": 76,
@@ -6058,9 +6058,9 @@
       "lap_start": 1,
       "lap_end": 17,
       "stint_length": 17,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 18,
+      "pit_duration": 23.57,
+      "stop_duration": 2.1
     },
     {
       "session_key": 9979,
@@ -6068,14 +6068,14 @@
       "driver_name": "Lewis HAMILTON",
       "team_name": "Ferrari",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 18,
       "lap_end": 55,
       "stint_length": 38,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 56,
+      "pit_duration": 24.26,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -6083,7 +6083,7 @@
       "driver_name": "Lewis HAMILTON",
       "team_name": "Ferrari",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 56,
       "lap_end": 78,
@@ -6103,9 +6103,9 @@
       "lap_start": 1,
       "lap_end": 47,
       "stint_length": 47,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 48,
+      "pit_duration": 24.5,
+      "stop_duration": 3.1
     },
     {
       "session_key": 9979,
@@ -6113,14 +6113,14 @@
       "driver_name": "Carlos SAINZ",
       "team_name": "Williams",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 48,
       "lap_end": 52,
       "stint_length": 5,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 53,
+      "pit_duration": 24.05,
+      "stop_duration": 2.7
     },
     {
       "session_key": 9979,
@@ -6128,7 +6128,7 @@
       "driver_name": "Carlos SAINZ",
       "team_name": "Williams",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 53,
       "lap_end": 76,
@@ -6148,8 +6148,8 @@
       "lap_start": 1,
       "lap_end": 52,
       "stint_length": 52,
-      "pit_lap": null,
-      "pit_duration": null,
+      "pit_lap": 53,
+      "pit_duration": 19.4,
       "stop_duration": null
     },
     {
@@ -6158,14 +6158,14 @@
       "driver_name": "George RUSSELL",
       "team_name": "Mercedes",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "MEDIUM",
       "lap_start": 53,
       "lap_end": 67,
       "stint_length": 15,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 68,
+      "pit_duration": 24.03,
+      "stop_duration": 2.5
     },
     {
       "session_key": 9979,
@@ -6173,7 +6173,7 @@
       "driver_name": "George RUSSELL",
       "team_name": "Mercedes",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 68,
       "lap_end": 76,
@@ -6193,9 +6193,9 @@
       "lap_start": 1,
       "lap_end": 19,
       "stint_length": 19,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 20,
+      "pit_duration": 25.76,
+      "stop_duration": 3.8
     },
     {
       "session_key": 9979,
@@ -6203,14 +6203,14 @@
       "driver_name": "Oscar PIASTRI",
       "team_name": "McLaren",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 20,
       "lap_end": 47,
       "stint_length": 28,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 48,
+      "pit_duration": 23.91,
+      "stop_duration": 2.3
     },
     {
       "session_key": 9979,
@@ -6218,7 +6218,7 @@
       "driver_name": "Oscar PIASTRI",
       "team_name": "McLaren",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "HARD",
       "lap_start": 48,
       "lap_end": 78,
@@ -6238,9 +6238,9 @@
       "lap_start": 1,
       "lap_end": 0,
       "stint_length": 0,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 1,
+      "pit_duration": 50.19,
+      "stop_duration": 28.5
     },
     {
       "session_key": 9979,
@@ -6248,14 +6248,14 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 2,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 2,
       "compound": "HARD",
       "lap_start": 1,
       "lap_end": 16,
       "stint_length": 16,
-      "pit_lap": null,
-      "pit_duration": null,
-      "stop_duration": null
+      "pit_lap": 17,
+      "pit_duration": 24.58,
+      "stop_duration": 3.2
     },
     {
       "session_key": 9979,
@@ -6263,7 +6263,7 @@
       "driver_name": "Oliver BEARMAN",
       "team_name": "Haas F1 Team",
       "stint_number": 3,
-      "strategy_stint_number": 1,
+      "strategy_stint_number": 3,
       "compound": "MEDIUM",
       "lap_start": 17,
       "lap_end": 76,
@@ -103867,6 +103867,7 @@
       9947,
       9979,
       10014
-    ]
+    ],
+    "source": "api"
   }
 }

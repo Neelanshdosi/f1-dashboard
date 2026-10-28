@@ -182,6 +182,9 @@ def test_strategy_stints_grouping_and_chips():
     assert get_chips(9693, 4) == "I > H > I"
     assert get_chips(9693, 1) == "I > M > I"
 
+    # 9979 Driver 4 (Monaco Norris M > H > H across 3 strategy stints)
+    assert get_chips(9979, 4) == "M > H > H"
+
     # 9472 Bottas and Hulkenberg (same-compound stops must produce distinct strategy stints)
     assert get_chips(9472, 77) == "S > H > H"
     assert get_chips(9472, 27) == "S > H > H > S"
