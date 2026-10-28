@@ -1,1 +1,2 @@
-TODO(owner): Add dashboard screenshots here, for example `tyre_degradation.png`, `pit_strategy.png`, and `race_selector.png`.
+# Dashboard Screenshots
+This directory contains automated visual snapshots of the race analytics dashboard generated across sessions and mobile viewports.

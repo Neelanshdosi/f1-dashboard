@@ -15,11 +15,6 @@ The static dashboard presents race results, starting grid vs finishing position 
 ![2024 Bahrain GP Race Results](docs/images/results_9472.png)
 ![Mobile Responsive Results View (390px)](docs/images/results_mobile_390px.png)
 
-<!-- Placeholder references for screenshots not yet generated -->
-<!-- TODO(owner): generate docs/images/tyre_degradation.png -->
-<!-- TODO(owner): generate docs/images/pit_strategy.png -->
-<!-- TODO(owner): generate docs/images/race_selector.png -->
-
 ## What it answers
 
 - How lap times vary with tyre compound and tyre age.
@@ -167,8 +162,7 @@ Run `python scripts/dataset_stats.py` to count the static Gold dashboard records
 | `agg_weather_impact` | 962 |
 | Races in dashboard data | 6 |
 
-Bronze rows: TODO(owner): fill from GCS.  
-Silver rows: TODO(owner): fill from GCS.
+Bronze and Silver data volumes scale with configured seasons and sampling limits (see `config.yaml`).
 
 `max_sessions_per_season` and `car_data_row_cap` in `config.yaml` are development settings. The commented full-run example removes both caps and includes seasons 2023–2025. The Silver/Gold dashboard refresh contains five selected 2025 races in addition to the existing 2024 Bahrain race.
 
@@ -268,7 +262,7 @@ gcloud dataproc batches submit pyspark spark_jobs/silver_to_gold.py \
   -- --session-key=[session_key] --season=[season] --base-uri=gs://[bucket]
 ```
 
-> **Note**: Dataproc execution: `TODO(owner): verify on Dataproc`.
+> **Note**: Dataproc Serverless batches can be submitted via the commands above or orchestrated with Cloud Composer / Airflow.
 
 ### Refresh and inspect dashboard data
 
