@@ -221,7 +221,13 @@ function initRaceSelector() {
     select.appendChild(option);
   });
   if (!races.length) return;
-  selectedSessionKey = (races.find((race) => race.name.includes("Abu Dhabi")) || races[races.length - 1]).session_key;
+  const hash = window.location.hash;
+  const raceMatch = hash.match(/race=(\d+)/);
+  if (raceMatch && races.some((r) => r.session_key === Number(raceMatch[1]))) {
+    selectedSessionKey = Number(raceMatch[1]);
+  } else {
+    selectedSessionKey = (races.find((race) => race.name.includes("Abu Dhabi")) || races[races.length - 1]).session_key;
+  }
   select.value = selectedSessionKey;
   select.addEventListener("change", () => {
     selectedSessionKey = Number(select.value);
