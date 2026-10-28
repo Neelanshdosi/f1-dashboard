@@ -106,32 +106,135 @@ let goldData = null;
 let tyreChart = null;
 let weatherChart = null;
 let selectedSessionKey = null;
+let currentTabId = "results";
 let resultsSortField = null;
-let resultsSortDirection = "asc";
+// Export helpers for testing environments (e.g. Node)
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    formatDuration,
+    formatGap,
+    formatLapsDown,
+    formatTimeGap,
+    formatPoints,
+    formatPositionsGained,
+    formatStatusBadge,
+    formatFinalPosition,
+    formatGridPosition,
+  };
+}
 
-// Initialize on DOM load
-document.addEventListener("DOMContentLoaded", async () => {
-  setupTabs();
-  setupResultsSorting();
-  await loadData();
-});
+// Initialize on DOM load if running in a browser environment
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", async () => {
+    setupTabs();
+    setupResultsSorting();
+    setupHashSync();
+    await loadData();
+  });
+}
 
-// Setup tab navigation
+// Parse hash: #race=<session_key>&tab=<tab_id>
+function parseHash() {
+  const hash = window.location.hash.replace(/^#/, "");
+  const params = new URLSearchParams(hash);
+  const race = params.get("race");
+  const tab = params.get("tab");
+  return {
+    race: race ? Number(race) : null,
+    tab: tab || null,
+  };
+}
+
+// Update URL hash state
+function updateHash() {
+  const params = new URLSearchParams();
+  if (selectedSessionKey) {
+    params.set("race", String(selectedSessionKey));
+  }
+  if (currentTabId && currentTabId !== "results") {
+    params.set("tab", currentTabId);
+  }
+  const hashStr = params.toString();
+  const newHash = hashStr ? `#${hashStr}` : "";
+  if (window.location.hash !== newHash) {
+    window.history.replaceState(null, "", newHash || window.location.pathname);
+  }
+}
+
+// Setup hash change listener
+function setupHashSync() {
+  window.addEventListener("hashchange", () => {
+    const { race, tab } = parseHash();
+    if (tab && tab !== currentTabId) {
+      switchTab(tab, false);
+    }
+    if (race && goldData && Number(race) !== Number(selectedSessionKey)) {
+      const raceExists = (goldData.races || []).some((r) => Number(r.session_key) === Number(race));
+      if (raceExists) {
+        selectedSessionKey = Number(race);
+        const sel = document.getElementById("race-select");
+        if (sel) sel.value = String(selectedSessionKey);
+        resultsSortField = null;
+        resultsSortDirection = "asc";
+        renderSelectedRace();
+      }
+    }
+  });
+}
+
+function switchTab(tabId, updateUrl = true) {
+  const tabs = Array.from(document.querySelectorAll(".tab-btn"));
+  const views = Array.from(document.querySelectorAll(".view-content"));
+  const targetBtn = tabs.find((t) => t.id === `tab-${tabId}` || t.dataset.target === `view-${tabId}`);
+  if (!targetBtn) return;
+
+  tabs.forEach((t) => {
+    const isActive = t === targetBtn;
+    t.classList.toggle("active", isActive);
+    t.setAttribute("aria-selected", isActive ? "true" : "false");
+    t.setAttribute("tabindex", isActive ? "0" : "-1");
+  });
+
+  const targetViewId = targetBtn.dataset.target;
+  views.forEach((v) => {
+    const isActive = v.id === targetViewId;
+    v.classList.toggle("active", isActive);
+  });
+
+  currentTabId = tabId.replace(/^tab-/, "").replace(/^view-/, "");
+  if (updateUrl) updateHash();
+
+  if (targetViewId === "view-tyre" && tyreChart) tyreChart.resize();
+  if (targetViewId === "view-weather" && weatherChart) weatherChart.resize();
+}
+
+// Setup tab navigation with full ARIA and keyboard arrow keys
 function setupTabs() {
-  const tabs = document.querySelectorAll(".tab-btn");
-  tabs.forEach((tab) => {
+  const tabs = Array.from(document.querySelectorAll(".tab-btn"));
+
+  tabs.forEach((tab, index) => {
     tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      document.querySelectorAll(".view-content").forEach((v) => v.classList.remove("active"));
+      const tabId = tab.dataset.target.replace(/^view-/, "");
+      switchTab(tabId, true);
+    });
 
-      tab.classList.add("active");
-      const targetId = tab.dataset.target;
-      const targetView = document.getElementById(targetId);
-      if (targetView) targetView.classList.add("active");
-
-      // Trigger resize for Chart.js canvases if hidden during init
-      if (targetId === "view-tyre" && tyreChart) tyreChart.resize();
-      if (targetId === "view-weather" && weatherChart) weatherChart.resize();
+    tab.addEventListener("keydown", (e) => {
+      let newIndex = index;
+      if (e.key === "ArrowRight") {
+        newIndex = (index + 1) % tabs.length;
+      } else if (e.key === "ArrowLeft") {
+        newIndex = (index - 1 + tabs.length) % tabs.length;
+      } else if (e.key === "Home") {
+        newIndex = 0;
+      } else if (e.key === "End") {
+        newIndex = tabs.length - 1;
+      } else {
+        return;
+      }
+      e.preventDefault();
+      tabs[newIndex].focus();
+      const tabId = tabs[newIndex].dataset.target.replace(/^view-/, "");
+      switchTab(tabId, true);
     });
   });
 }
@@ -170,18 +273,38 @@ function setupResultsSorting() {
 
 // Load Gold dataset from static JSON
 async function loadData() {
+  const loadingEl = document.getElementById("dashboard-loading");
+  const errorEl = document.getElementById("dashboard-error");
+  if (loadingEl) loadingEl.style.display = "flex";
+  if (errorEl) errorEl.style.display = "none";
+
   try {
     const res = await fetch("gold_data.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch gold_data.json`);
     goldData = await res.json();
+    if (loadingEl) loadingEl.style.display = "none";
     initRaceSelector();
+
+    const { tab } = parseHash();
+    if (tab) {
+      switchTab(tab, false);
+    }
     renderSelectedRace();
   } catch (err) {
     console.error("Failed to load gold_data.json:", err);
-    document.getElementById("leaderboard-tbody").innerHTML = `
-      <tr><td colspan="7" style="color: #ef4444; text-align: center;">
-        Failed to load Gold dataset. Ensure gold_data.json exists in the dashboard directory.
-      </td></tr>
-    `;
+    if (loadingEl) loadingEl.style.display = "none";
+    if (errorEl) {
+      errorEl.textContent = "Failed to load Gold telemetry dataset. Ensure gold_data.json is present and valid.";
+      errorEl.style.display = "block";
+    }
+    const tbody = document.getElementById("leaderboard-tbody");
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr><td colspan="7" style="color: #ef4444; text-align: center;">
+          Failed to load Gold dataset. Ensure gold_data.json exists in the dashboard directory.
+        </td></tr>
+      `;
+    }
   }
 }
 
@@ -236,18 +359,19 @@ function initRaceSelector() {
     select.appendChild(option);
   });
   if (!races.length) return;
-  const hash = window.location.hash;
-  const raceMatch = hash.match(/race=(\d+)/);
-  if (raceMatch && races.some((r) => r.session_key === Number(raceMatch[1]))) {
-    selectedSessionKey = Number(raceMatch[1]);
+  const { race } = parseHash();
+  if (race && races.some((r) => r.session_key === Number(race))) {
+    selectedSessionKey = Number(race);
   } else {
-    selectedSessionKey = (races.find((race) => race.name.includes("Abu Dhabi")) || races[races.length - 1]).session_key;
+    selectedSessionKey = races[races.length - 1].session_key;
   }
   select.value = selectedSessionKey;
+  updateHash();
   select.addEventListener("change", () => {
     selectedSessionKey = Number(select.value);
     resultsSortField = null;
     resultsSortDirection = "asc";
+    updateHash();
     renderSelectedRace();
   });
 }
@@ -677,13 +801,14 @@ function renderOverviewMetrics() {
   // 2. Fastest Lap (from driver_summary)
   const fastestCard = document.getElementById("metric-fastest-card");
   if (fastestCard) {
-    if (drivers.length > 0) {
+    const validDrivers = drivers.filter((d) => d.fastest_lap_seconds != null && !isNaN(d.fastest_lap_seconds));
+    if (validDrivers.length > 0) {
       fastestCard.style.display = "block";
-      const fastest = drivers.reduce(
+      const fastest = validDrivers.reduce(
         (prev, curr) => (curr.fastest_lap_seconds < prev.fastest_lap_seconds ? curr : prev),
-        drivers[0]
+        validDrivers[0]
       );
-      document.getElementById("metric-fastest-lap").textContent = `${fastest.fastest_lap_seconds.toFixed(3)}s`;
+      document.getElementById("metric-fastest-lap").textContent = `${Number(fastest.fastest_lap_seconds).toFixed(3)}s`;
       document.getElementById("metric-fastest-sub").textContent =
         `${fastest.driver_name} • ${fastest.team_name || ""}`;
     } else {

@@ -64,20 +64,27 @@
       </div>
     </section>
 
+    <!-- Loading Skeleton & Global Error Containers -->
+    <div id="dashboard-loading" class="loading-skeleton-container" aria-live="polite">
+      <div class="skeleton-pill"></div>
+      <div class="skeleton-text">Loading Gold telemetry snapshot...</div>
+    </div>
+    <div id="dashboard-error" class="error-banner" style="display: none;" role="alert" aria-live="assertive"></div>
+
     <!-- Navigation Tabs -->
-    <nav class="tabs-nav" aria-label="Dashboard navigation">
-      <button class="tab-btn active" data-target="view-results" id="tab-results">🏆 Official Results</button>
-      <button class="tab-btn" data-target="view-leaderboard" id="tab-leaderboard">🏁 Pace Ranking</button>
-      <button class="tab-btn" data-target="view-tyre">🛞 Tyre Degradation</button>
-      <button class="tab-btn" data-target="view-strategy">⏱️ Pit & Stint Matrix</button>
-      <button class="tab-btn" data-target="view-weather">🌡️ Weather Impact</button>
-      <button class="tab-btn" data-target="view-arch">⚙️ Data Architecture</button>
+    <nav class="tabs-nav" aria-label="Dashboard navigation" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-results" tabindex="0" data-target="view-results" id="tab-results">🏆 Official Results</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-leaderboard" tabindex="-1" data-target="view-leaderboard" id="tab-leaderboard">🏁 Pace Ranking</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-tyre" tabindex="-1" data-target="view-tyre" id="tab-tyre">🛞 Tyre Degradation</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-strategy" tabindex="-1" data-target="view-strategy" id="tab-strategy">⏱️ Pit & Stint Matrix</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-weather" tabindex="-1" data-target="view-weather" id="tab-weather">🌡️ Weather Impact</button>
+      <button class="tab-btn" role="tab" aria-selected="false" aria-controls="view-arch" tabindex="-1" data-target="view-arch" id="tab-arch">⚙️ Data Architecture</button>
     </nav>
 
     <!-- Main Views -->
     <main>
       <!-- Tab 0: Official Race Results View -->
-      <section id="view-results" class="view-content active">
+      <section id="view-results" class="view-content active" role="tabpanel" aria-labelledby="tab-results" tabindex="0">
         <div class="glass-panel">
           <div class="panel-header">
             <div>
@@ -94,6 +101,7 @@
 
           <div class="table-responsive">
             <table id="results-table">
+              <caption class="sr-only">Final Race Classification, gaps, and pit stops</caption>
               <thead>
                 <tr id="results-thead-tr">
                   <th scope="col" class="sortable" data-sort="final_position" tabindex="0" role="button" aria-sort="none">POS <span class="sort-icon"></span></th>
@@ -161,7 +169,7 @@
       </section>
 
       <!-- Tab 1: Pace Ranking View -->
-      <section id="view-leaderboard" class="view-content">
+      <section id="view-leaderboard" class="view-content" role="tabpanel" aria-labelledby="tab-leaderboard" tabindex="0">
         <div id="leaderboard-no-results-banner" class="info-banner" style="display: none;">Official results are not available for this session in the data.</div>
         <div class="glass-panel">
           <div class="panel-header">
@@ -172,6 +180,7 @@
           </div>
           <div class="table-responsive">
             <table>
+              <caption class="sr-only">Driver Pace Overview ranked by fastest lap</caption>
               <thead>
                 <tr>
                   <th scope="col">PACE RANK</th>
@@ -192,7 +201,7 @@
       </section>
 
       <!-- Tab 2: Tyre Degradation View -->
-      <section id="view-tyre" class="view-content">
+      <section id="view-tyre" class="view-content" role="tabpanel" aria-labelledby="tab-tyre" tabindex="0">
         <div class="glass-panel">
           <div class="panel-header">
             <div>
@@ -213,7 +222,7 @@
       </section>
 
       <!-- Tab 3: Stint & Pit Strategy View -->
-      <section id="view-strategy" class="view-content">
+      <section id="view-strategy" class="view-content" role="tabpanel" aria-labelledby="tab-strategy" tabindex="0">
         <div class="glass-panel">
           <div class="panel-header">
             <div>
@@ -228,7 +237,7 @@
       </section>
 
       <!-- Tab 4: Weather Impact View -->
-      <section id="view-weather" class="view-content">
+      <section id="view-weather" class="view-content" role="tabpanel" aria-labelledby="tab-weather" tabindex="0">
         <div class="glass-panel">
           <div class="panel-header">
             <div>
@@ -243,7 +252,7 @@
       </section>
 
       <!-- Tab 5: Architecture View -->
-      <section id="view-arch" class="view-content">
+      <section id="view-arch" class="view-content" role="tabpanel" aria-labelledby="tab-arch" tabindex="0">
         <div class="glass-panel">
           <div class="panel-header">
             <div>

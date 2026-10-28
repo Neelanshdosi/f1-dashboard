@@ -9,11 +9,16 @@ An OpenF1 data pipeline that ingests race sessions, transforms them with PySpark
 
 **Dashboard URL:** TODO(owner): add the deployed Vercel or GitHub Pages URL.
 
-<!-- TODO(owner): Add dashboard screenshots under docs/images/. -->
+The static dashboard presents race results, starting grid vs finishing position slope charts, pit stop & tyre stint timelines, pace rankings, tyre degradation curves, and weather observations.
 
-![Tyre degradation dashboard](docs/images/tyre_degradation.png)
-![Pit strategy dashboard](docs/images/pit_strategy.png)
-![Race selector dashboard](docs/images/race_selector.png)
+<!-- Generated screenshots -->
+![2024 Bahrain GP Race Results](docs/images/results_9472.png)
+![Mobile Responsive Results View (390px)](docs/images/results_mobile_390px.png)
+
+<!-- Placeholder references for screenshots not yet generated -->
+<!-- TODO(owner): generate docs/images/tyre_degradation.png -->
+<!-- TODO(owner): generate docs/images/pit_strategy.png -->
+<!-- TODO(owner): generate docs/images/race_selector.png -->
 
 ## What it answers
 
@@ -115,6 +120,9 @@ Measured on 2026-10-21 via `python scripts/probe_openf1.py`:
 
 > **Pit Stop Detection Rule Note**:
 > Stops are counted when OpenF1 gives a stop time, or when the pit-lane duration is at least 18 s. The 18 s value was chosen from observed data and may misclassify very short or very long pit-lane passes.
+
+> **Pace Ranking Note**:
+> Driver pace ranking is ordered strictly by fastest lap time in the session, not official race finishing classification. Official finishing results and points are presented separately in the Race Results view.
 
 ## Data quality
 
