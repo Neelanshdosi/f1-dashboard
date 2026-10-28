@@ -33,41 +33,41 @@
         <label class="race-picker" for="race-select">Race
           <select id="race-select" aria-label="Select race"></select>
         </label>
-        <div class="badge-pill">
+        <div class="badge-pill" id="header-status-pill" title="OpenF1 Gold Snapshot">
           <span class="badge-dot"></span>
-          <span>OpenF1 Gold Snapshot</span>
+          <span id="header-status-text">OpenF1 Gold Snapshot</span>
         </div>
       </div>
     </header>
 
     <!-- Overview Metric Cards -->
     <section class="metrics-grid">
-      <div class="metric-card">
-        <div class="metric-title">Fastest Lap Leader</div>
-        <div class="metric-value" id="metric-winner">—</div>
-        <div class="metric-sub" id="metric-winner-sub">Fastest lap in selected race</div>
+      <div class="metric-card" id="metric-winner-card">
+        <div class="metric-title">Race Winner</div>
+        <div class="metric-value" id="metric-race-winner">—</div>
+        <div class="metric-sub" id="metric-race-winner-sub">Winner of selected race</div>
       </div>
-      <div class="metric-card">
+      <div class="metric-card" id="metric-fastest-card">
         <div class="metric-title">Fastest Lap</div>
         <div class="metric-value" id="metric-fastest-lap">—</div>
         <div class="metric-sub" id="metric-fastest-sub">Selected race</div>
       </div>
-      <div class="metric-card">
+      <div class="metric-card" id="metric-points-card">
+        <div class="metric-title">Points Awarded</div>
+        <div class="metric-value" id="metric-points">—</div>
+        <div class="metric-sub" id="metric-points-sub">Championship points distributed</div>
+      </div>
+      <div class="metric-card" id="metric-stops-card">
         <div class="metric-title">Field Pit Stops</div>
         <div class="metric-value" id="metric-stops">—</div>
         <div class="metric-sub" id="metric-stops-sub">Selected race</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-title">Processed Records</div>
-        <div class="metric-value" id="metric-rows">—</div>
-        <div class="metric-sub">Gold analytics rows</div>
       </div>
     </section>
 
     <!-- Navigation Tabs -->
     <nav class="tabs-nav" aria-label="Dashboard navigation">
       <button class="tab-btn active" data-target="view-results" id="tab-results">🏆 Official Results</button>
-      <button class="tab-btn" data-target="view-leaderboard">🏁 Pace Leaderboard</button>
+      <button class="tab-btn" data-target="view-leaderboard" id="tab-leaderboard">🏁 Pace Ranking</button>
       <button class="tab-btn" data-target="view-tyre">🛞 Tyre Degradation</button>
       <button class="tab-btn" data-target="view-strategy">⏱️ Pit & Stint Matrix</button>
       <button class="tab-btn" data-target="view-weather">🌡️ Weather Impact</button>
@@ -159,27 +159,27 @@
         </div>
       </section>
 
-      <!-- Tab 1: Leaderboard View -->
+      <!-- Tab 1: Pace Ranking View -->
       <section id="view-leaderboard" class="view-content">
         <div id="leaderboard-no-results-banner" class="info-banner" style="display: none;">Official results are not available for this session in the data.</div>
         <div class="glass-panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">Driver Pace & Strategy Overview</div>
-              <div class="panel-desc" id="leaderboard-desc">Calculated by PySpark Gold Aggregations.</div>
+              <div class="panel-title">Driver Pace Overview</div>
+              <div class="panel-desc" id="leaderboard-desc">Ranked by fastest lap, not race finishing position.</div>
             </div>
           </div>
           <div class="table-responsive">
             <table>
               <thead>
                 <tr>
-                  <th>Lap rank</th>
-                  <th>Driver</th>
-                  <th>Constructor</th>
-                  <th>Start Tyre</th>
-                  <th>Laps</th>
-                  <th>Fastest Lap</th>
-                  <th>Pit Stops</th>
+                  <th scope="col">PACE RANK</th>
+                  <th scope="col">DRIVER</th>
+                  <th scope="col">TEAM</th>
+                  <th scope="col">STRATEGY</th>
+                  <th scope="col">LAPS</th>
+                  <th scope="col">FASTEST LAP</th>
+                  <th scope="col">PIT STOPS</th>
                 </tr>
               </thead>
               <tbody id="leaderboard-tbody">

@@ -375,6 +375,65 @@ tr:hover td {
   border: 1px solid rgba(248, 250, 252, 0.4);
 }
 
+/* Strategy Chips Sequence */
+.strategy-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.strategy-sep {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.compound-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.compound-chip.soft {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.compound-chip.medium {
+  background: rgba(234, 179, 8, 0.25);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.5);
+}
+
+.compound-chip.hard {
+  background: rgba(248, 250, 252, 0.25);
+  color: #f8fafc;
+  border: 1px solid rgba(248, 250, 252, 0.5);
+}
+
+.compound-chip.intermediate {
+  background: rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.compound-chip.wet {
+  background: rgba(59, 130, 246, 0.25);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
 .status-badge {
   display: inline-block;
   padding: 2px 8px;

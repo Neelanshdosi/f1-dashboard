@@ -185,6 +185,28 @@ async function loadData() {
   }
 }
 
+function renderStrategyChips(driverName, raceStints) {
+  if (!raceStints || !raceStints.length) return "—";
+  const driverStints = raceStints
+    .filter((s) => s.driver_name === driverName)
+    .sort((a, b) => (a.stint_number || 0) - (b.stint_number || 0));
+
+  if (!driverStints.length) return "—";
+
+  return driverStints.map((stint, idx) => {
+    const comp = (stint.compound || "UNKNOWN").toUpperCase();
+    const initial = comp.charAt(0) || "?";
+    let cls = "soft";
+    if (comp.includes("MEDIUM")) cls = "medium";
+    else if (comp.includes("HARD")) cls = "hard";
+    else if (comp.includes("INTER")) cls = "intermediate";
+    else if (comp.includes("WET")) cls = "wet";
+
+    const chipHtml = `<span class="compound-chip ${cls}" title="${comp} (Stint ${stint.stint_number || idx + 1})" aria-label="${comp}">${initial}</span>`;
+    return idx === 0 ? chipHtml : `<span class="strategy-sep" aria-hidden="true">&rsaquo;</span>${chipHtml}`;
+  }).join("");
+}
+
 function initRaceSelector() {
   const select = document.getElementById("race-select");
   const races = [...(goldData.races || [])].sort((a, b) =>
@@ -194,7 +216,8 @@ function initRaceSelector() {
   races.forEach((race) => {
     const option = document.createElement("option");
     option.value = race.session_key;
-    option.textContent = race.name;
+    const suffix = race.has_results === false ? " (no results)" : "";
+    option.textContent = `${race.name}${suffix}`;
     select.appendChild(option);
   });
   if (!races.length) return;
@@ -219,8 +242,23 @@ function renderSelectedRace() {
     (item) => Number(item.session_key) === Number(selectedSessionKey)
   );
   if (!race) return;
+
+  const sourceMap = {
+    bigquery: "BigQuery Gold",
+    api: "OpenF1 snapshot (API mode)",
+  };
+  const metaSource = goldData.meta?.source || "bigquery";
+  const sourceLabel = sourceMap[metaSource] || metaSource;
+  const raceDateStr = race.date ? ` (${race.date})` : "";
   document.getElementById("race-subtitle").textContent =
-    `${race.name} • GCP Medallion Pipeline (OpenF1 → GCS → PySpark → BigQuery)`;
+    `${race.name}${raceDateStr} • ${sourceLabel}`;
+
+  const pill = document.getElementById("header-status-pill");
+  if (pill) {
+    const genAt = goldData.meta?.generated_at;
+    pill.setAttribute("title", genAt ? `Generated at: ${genAt}` : "OpenF1 Gold Snapshot");
+  }
+
   renderRaceResults();
   renderOverviewMetrics();
   renderLeaderboard();
@@ -337,6 +375,8 @@ function renderRaceResults() {
   document.getElementById("results-desc").textContent =
     `Official classified finishing results for ${results.length} drivers.`;
 
+  const raceStints = raceRows("pit_strategy");
+
   rowsToRender.forEach((r) => {
     const tr = document.createElement("tr");
     const teamColour = r.team_colour ? `#${r.team_colour}` : "#94a3b8";
@@ -345,6 +385,11 @@ function renderRaceResults() {
       <td>${formatGridPosition(r.grid_position)}</td>
       <td>${gained.html}</td>
     ` : "";
+    const stratChips = renderStrategyChips(r.driver_name, raceStints);
+    const pitStopsDisplay = r.total_pit_stops != null ? `
+      <div style="font-weight: 700;">${r.total_pit_stops}</div>
+      ${stratChips !== "—" ? `<div class="strategy-chips" style="margin-top: 4px;">${stratChips}</div>` : ""}
+    ` : "—";
 
     tr.innerHTML = `
       <td style="font-weight: 800; color: #fff;">${formatFinalPosition(r.final_position)}</td>
@@ -358,7 +403,7 @@ function renderRaceResults() {
       <td>${r.team_name || "—"}</td>
       ${gridCells}
       <td>${formatStatusBadge(r.status, r.laps_down)}</td>
-      <td>${r.total_pit_stops != null ? r.total_pit_stops : "—"}</td>
+      <td>${pitStopsDisplay}</td>
       <td style="font-family: var(--font-mono); font-size: 13px;">${formatTimeGap(r)}</td>
       <td>${r.number_of_laps != null ? r.number_of_laps : "—"}</td>
       <td style="font-weight: 800; color: #38bdf8;">${formatPoints(r.points)}</td>
@@ -581,35 +626,80 @@ function renderGridVsFinish(results) {
 
 
 
-// Render Top Overview Cards
+// Render Top Overview Cards (Task 5.3)
 function renderOverviewMetrics() {
-  if (!goldData || !goldData.driver_summary) return;
+  if (!goldData) return;
 
+  const results = raceRows("race_results");
   const drivers = raceRows("driver_summary");
-  if (!drivers.length) return;
-  const fastest = drivers.reduce((prev, curr) =>
-    (curr.fastest_lap_seconds < prev.fastest_lap_seconds ? curr : prev), drivers[0]);
 
-  document.getElementById("metric-winner").textContent = fastest.driver_name;
-  document.getElementById("metric-fastest-lap").textContent = `${fastest.fastest_lap_seconds.toFixed(3)}s`;
-  document.getElementById("metric-winner-sub").textContent = fastest.team_name || "Fastest lap in selected race";
-  document.getElementById("metric-fastest-sub").textContent = `${fastest.name_acronym || ""} • ${fastest.team_name || ""}`;
+  // 1. Race Winner (from race_results where final_position === 1)
+  const winnerCard = document.getElementById("metric-winner-card");
+  const winnerRow = results.find((r) => r.final_position === 1);
+  if (winnerCard) {
+    if (winnerRow) {
+      winnerCard.style.display = "block";
+      document.getElementById("metric-race-winner").textContent = winnerRow.driver_name;
+      const winTime = formatDuration(winnerRow.duration_seconds);
+      document.getElementById("metric-race-winner-sub").textContent =
+        `${winnerRow.team_name || ""} • ${winTime}`;
+    } else {
+      winnerCard.style.display = "none";
+    }
+  }
 
-  // Totals and row counts for the selected session.
+  // 2. Fastest Lap (from driver_summary)
+  const fastestCard = document.getElementById("metric-fastest-card");
+  if (fastestCard) {
+    if (drivers.length > 0) {
+      fastestCard.style.display = "block";
+      const fastest = drivers.reduce(
+        (prev, curr) => (curr.fastest_lap_seconds < prev.fastest_lap_seconds ? curr : prev),
+        drivers[0]
+      );
+      document.getElementById("metric-fastest-lap").textContent = `${fastest.fastest_lap_seconds.toFixed(3)}s`;
+      document.getElementById("metric-fastest-sub").textContent =
+        `${fastest.driver_name} • ${fastest.team_name || ""}`;
+    } else {
+      fastestCard.style.display = "none";
+    }
+  }
+
+  // 3. Points Awarded (sum of points in race_results)
+  const pointsCard = document.getElementById("metric-points-card");
+  if (pointsCard) {
+    const totalPoints = results.reduce((sum, r) => sum + (r.points || 0), 0);
+    if (results.length > 0 && totalPoints > 0) {
+      pointsCard.style.display = "block";
+      document.getElementById("metric-points").textContent = `${formatPoints(totalPoints)} pts`;
+      document.getElementById("metric-points-sub").textContent = "Championship points distributed";
+    } else {
+      pointsCard.style.display = "none";
+    }
+  }
+
+  // 4. Field Pit Stops
+  const stopsCard = document.getElementById("metric-stops-card");
+  if (stopsCard) {
+    if (drivers.length > 0) {
+      stopsCard.style.display = "block";
+      const totalStops = drivers.reduce((sum, d) => sum + (d.total_pit_stops || 0), 0);
+      document.getElementById("metric-stops").textContent = `${totalStops} Stops`;
+      document.getElementById("metric-stops-sub").textContent = `${(totalStops / drivers.length).toFixed(1)} stops / driver`;
+    } else {
+      stopsCard.style.display = "none";
+    }
+  }
+
+  const raceLaps = Math.max(...drivers.map((driver) => driver.total_laps || 0), 0);
   const totalStops = drivers.reduce((sum, d) => sum + (d.total_pit_stops || 0), 0);
-  document.getElementById("metric-stops").textContent = `${totalStops} Stops`;
-  document.getElementById("metric-stops-sub").textContent = `${(totalStops / drivers.length).toFixed(1)} stops / driver`;
-  const rows = ["driver_summary", "pit_strategy", "tyre_degradation", "weather_impact", "race_results"]
-    .reduce((sum, key) => sum + raceRows(key).length, 0);
-  document.getElementById("metric-rows").textContent = rows.toLocaleString();
-  const raceLaps = Math.max(...drivers.map((driver) => driver.total_laps || 0));
   document.getElementById("leaderboard-desc").textContent =
-    `PySpark Gold metrics for ${raceLaps} laps and ${totalStops} pit events. Drivers are ordered by fastest lap.`;
+    `Ranked by fastest lap, not race finishing position (${raceLaps} laps, ${totalStops} pit events).`;
   document.getElementById("strategy-title").textContent = `Pit Stop & Tyre Stint Timeline (${raceLaps} Laps)`;
   document.getElementById("weather-desc").textContent = `Track and ambient weather observations for ${raceRows("weather_impact").length} timestamps.`;
 }
 
-// Render Leaderboard Table
+// Render Pace Ranking Table (Task 5.3)
 function renderLeaderboard() {
   const tbody = document.getElementById("leaderboard-tbody");
   if (!tbody || !goldData) return;
@@ -617,12 +707,13 @@ function renderLeaderboard() {
   const drivers = [...raceRows("driver_summary")].sort(
     (a, b) => (a.fastest_lap_seconds || Infinity) - (b.fastest_lap_seconds || Infinity)
   );
+  const raceStints = raceRows("pit_strategy");
   tbody.innerHTML = "";
 
   drivers.forEach((d, idx) => {
     const tr = document.createElement("tr");
     const teamColour = d.team_colour ? `#${d.team_colour}` : "#94a3b8";
-    const compoundClass = (d.starting_compound || "soft").toLowerCase();
+    const stratChips = renderStrategyChips(d.driver_name, raceStints);
 
     tr.innerHTML = `
       <td style="font-weight: 800; color: #94a3b8;">#${idx + 1}</td>
@@ -633,13 +724,13 @@ function renderLeaderboard() {
           <span style="color: var(--text-muted); font-size: 11px;">(${d.name_acronym || d.driver_number})</span>
         </div>
       </td>
-      <td>${d.team_name || "N/A"}</td>
-      <td><span class="compound-badge ${compoundClass}">${d.starting_compound || "SOFT"}</span></td>
-      <td>${d.total_laps || 57}</td>
+      <td>${d.team_name || "—"}</td>
+      <td><div class="strategy-chips">${stratChips}</div></td>
+      <td>${d.total_laps || "—"}</td>
       <td style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8;">
-        ${d.fastest_lap_seconds ? d.fastest_lap_seconds.toFixed(3) + "s" : "N/A"}
+        ${d.fastest_lap_seconds ? d.fastest_lap_seconds.toFixed(3) + "s" : "—"}
       </td>
-      <td>${d.total_pit_stops || 0}</td>
+      <td>${d.total_pit_stops != null ? d.total_pit_stops : "—"}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -735,17 +826,47 @@ function updateTyreChart(selectedDriver) {
   });
 }
 
-// Render Stint Timelines (Gantt-style)
+// Render Stint Timelines (Gantt-style, Task 5.3 & Amendment 3)
 function renderStintTimelines() {
   const container = document.getElementById("timeline-list");
   if (!container || !goldData) return;
 
   container.innerHTML = "";
   const stints = raceRows("pit_strategy");
-  const drivers = [...new Set(stints.map(s => s.driver_name))].slice(0, 10); // top 10
+  const results = raceRows("race_results");
 
-  drivers.forEach((driver) => {
-    const driverStints = stints.filter(s => s.driver_name === driver).sort((a, b) => a.stint_number - b.stint_number);
+  const uniqueStintDrivers = [...new Set(stints.map((s) => s.driver_name))];
+
+  let orderedDrivers = [];
+  if (results.length > 0) {
+    // Order drivers by official race finishing order (final_position, nulls last)
+    const resultsDrivers = results.map((r) => r.driver_name);
+    orderedDrivers = resultsDrivers.filter((name) => uniqueStintDrivers.includes(name));
+    uniqueStintDrivers.forEach((name) => {
+      if (!orderedDrivers.includes(name)) orderedDrivers.push(name);
+    });
+  } else {
+    // Order by driver_number
+    const driverNumMap = {};
+    stints.forEach((s) => {
+      driverNumMap[s.driver_name] = s.driver_number || 999;
+    });
+    orderedDrivers = [...uniqueStintDrivers].sort(
+      (a, b) => (driverNumMap[a] || 999) - (driverNumMap[b] || 999)
+    );
+  }
+
+  if (!orderedDrivers.length) {
+    container.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No stint strategy data available.</div>';
+    return;
+  }
+
+  const totalRaceLaps = Math.max(...stints.map((stint) => stint.lap_end || 0), 1);
+
+  orderedDrivers.forEach((driver) => {
+    const driverStints = stints
+      .filter((s) => s.driver_name === driver)
+      .sort((a, b) => a.stint_number - b.stint_number);
     const row = document.createElement("div");
     row.className = "driver-timeline-row";
 
@@ -756,7 +877,6 @@ function renderStintTimelines() {
     const track = document.createElement("div");
     track.className = "timeline-track";
 
-    const totalRaceLaps = Math.max(...driverStints.map((stint) => stint.lap_end || 0), 1);
     driverStints.forEach((stint) => {
       const len = Math.max(stint.stint_length || (stint.lap_end - stint.lap_start + 1), 1);
       const widthPct = (len / totalRaceLaps) * 100;
