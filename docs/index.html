@@ -84,20 +84,28 @@
               <div class="panel-title">Final Race Classification</div>
               <div class="panel-desc" id="results-desc">Official race finishing positions, points, and gaps.</div>
             </div>
+            <div class="controls-bar" id="results-panel-controls">
+              <button id="reset-results-order" class="btn-subtle" style="display: none;">↺ Reset to official order</button>
+            </div>
           </div>
+
+          <!-- Podium Strip (P1 to P3) -->
+          <div id="results-podium" class="podium-strip" style="display: none;"></div>
+
           <div class="table-responsive">
-            <table>
+            <table id="results-table">
               <thead>
-                <tr>
-                  <th>Pos</th>
-                  <th>Driver</th>
-                  <th>Constructor</th>
-                  <th>Status</th>
-                  <th>Grid</th>
-                  <th>+/-</th>
-                  <th>Laps</th>
-                  <th>Time / Gap</th>
-                  <th>Pts</th>
+                <tr id="results-thead-tr">
+                  <th scope="col" class="sortable" data-sort="final_position" tabindex="0" role="button" aria-sort="none">POS <span class="sort-icon"></span></th>
+                  <th scope="col">DRIVER</th>
+                  <th scope="col">TEAM</th>
+                  <th scope="col" class="col-grid sortable" data-sort="grid_position" tabindex="0" role="button" aria-sort="none">GRID <span class="sort-icon"></span></th>
+                  <th scope="col" class="col-grid sortable" data-sort="positions_gained" tabindex="0" role="button" aria-sort="none">+/- <span class="sort-icon"></span></th>
+                  <th scope="col">STATUS</th>
+                  <th scope="col">PIT STOPS</th>
+                  <th scope="col">TIME / GAP</th>
+                  <th scope="col">LAPS</th>
+                  <th scope="col" class="sortable" data-sort="points" tabindex="0" role="button" aria-sort="none">PTS <span class="sort-icon"></span></th>
                 </tr>
               </thead>
               <tbody id="results-tbody">
@@ -105,11 +113,13 @@
               </tbody>
             </table>
           </div>
+          <p class="table-caption-text">Results and grid as reported by OpenF1 (beta endpoints). Pace ranking is shown separately.</p>
         </div>
       </section>
 
       <!-- Tab 1: Leaderboard View -->
       <section id="view-leaderboard" class="view-content">
+        <div id="leaderboard-no-results-banner" class="info-banner" style="display: none;">Official results are not available for this session in the data.</div>
         <div class="glass-panel">
           <div class="panel-header">
             <div>

@@ -3,14 +3,116 @@
    Loads BigQuery Gold JSON, renders Chart.js visualizations
 ───────────────────────────────────────────────────────────── */
 
+/* ─────────────────────────────────────────────────────────────
+   PURE FORMATTING & CONTRACT HELPERS
+───────────────────────────────────────────────────────────── */
+
+function formatDuration(seconds) {
+  if (seconds == null || isNaN(seconds)) return "—";
+  const totalMs = Math.round(Number(seconds) * 1000);
+  const ms = totalMs % 1000;
+  const totalS = Math.floor(totalMs / 1000);
+  const s = totalS % 60;
+  const totalM = Math.floor(totalS / 60);
+  const m = totalM % 60;
+  const h = Math.floor(totalM / 60);
+  const msStr = String(ms).padStart(3, "0");
+  const sStr = String(s).padStart(2, "0");
+  if (h > 0) {
+    const mStr = String(m).padStart(2, "0");
+    return `${h}:${mStr}:${sStr}.${msStr}`;
+  }
+  return `${m}:${sStr}.${msStr}`;
+}
+
+function formatGap(gapSeconds) {
+  if (gapSeconds == null || isNaN(gapSeconds)) return "—";
+  return `+${Number(gapSeconds).toFixed(3)} s`;
+}
+
+function formatLapsDown(lapsDown) {
+  if (lapsDown == null || isNaN(lapsDown)) return "—";
+  const n = Number(lapsDown);
+  return `+${n} ${n === 1 ? "LAP" : "LAPS"}`;
+}
+
+function formatTimeGap(row) {
+  if (!row) return "—";
+  if (row.final_position === 1) {
+    return formatDuration(row.duration_seconds);
+  }
+  if (row.gap_to_leader_seconds != null) {
+    return formatGap(row.gap_to_leader_seconds);
+  }
+  if (row.laps_down != null) {
+    return formatLapsDown(row.laps_down);
+  }
+  return "—";
+}
+
+function formatPoints(pts) {
+  if (pts == null || isNaN(pts)) return "—";
+  const n = Number(pts);
+  return n % 1 === 0 ? String(Math.trunc(n)) : n.toFixed(1);
+}
+
+function formatPositionsGained(gained) {
+  if (gained == null || isNaN(gained)) {
+    return { text: "—", html: "—", label: "grid position not available" };
+  }
+  const n = Number(gained);
+  if (n > 0) {
+    return {
+      text: `▲ ${n}`,
+      html: `<span class="pos-gain" aria-label="gained ${n} position${n === 1 ? "" : "s"}">▲ ${n}</span>`,
+      label: `gained ${n} position${n === 1 ? "" : "s"}`,
+    };
+  }
+  if (n < 0) {
+    const abs = Math.abs(n);
+    return {
+      text: `▼ ${abs}`,
+      html: `<span class="pos-loss" aria-label="lost ${abs} position${abs === 1 ? "" : "s"}">▼ ${abs}</span>`,
+      label: `lost ${abs} position${abs === 1 ? "" : "s"}`,
+    };
+  }
+  return {
+    text: "0",
+    html: `<span class="pos-same" aria-label="no change in position">0</span>`,
+    label: "no change in position",
+  };
+}
+
+function formatStatusBadge(status, lapsDown) {
+  const normStatus = (status || "Unclassified").trim();
+  if (normStatus === "Finished" && lapsDown != null && !isNaN(lapsDown)) {
+    const n = Number(lapsDown);
+    const badgeText = `+${n} ${n === 1 ? "LAP" : "LAPS"}`;
+    return `<span class="status-badge finished">${badgeText}</span>`;
+  }
+  const cls = normStatus.toLowerCase();
+  return `<span class="status-badge ${cls}">${normStatus}</span>`;
+}
+
+function formatFinalPosition(pos) {
+  return pos != null ? String(pos) : "—";
+}
+
+function formatGridPosition(pos) {
+  return pos != null ? String(pos) : "—";
+}
+
 let goldData = null;
 let tyreChart = null;
 let weatherChart = null;
 let selectedSessionKey = null;
+let resultsSortField = null;
+let resultsSortDirection = "asc";
 
 // Initialize on DOM load
 document.addEventListener("DOMContentLoaded", async () => {
   setupTabs();
+  setupResultsSorting();
   await loadData();
 });
 
@@ -30,6 +132,38 @@ function setupTabs() {
       // Trigger resize for Chart.js canvases if hidden during init
       if (targetId === "view-tyre" && tyreChart) tyreChart.resize();
       if (targetId === "view-weather" && weatherChart) weatherChart.resize();
+    });
+  });
+}
+
+function setupResultsSorting() {
+  const resetBtn = document.getElementById("reset-results-order");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      resultsSortField = null;
+      resultsSortDirection = "asc";
+      renderRaceResults();
+    });
+  }
+
+  document.querySelectorAll("#results-thead-tr th.sortable").forEach((th) => {
+    const handleSort = () => {
+      const field = th.dataset.sort;
+      if (resultsSortField === field) {
+        resultsSortDirection = resultsSortDirection === "asc" ? "desc" : "asc";
+      } else {
+        resultsSortField = field;
+        resultsSortDirection = (field === "final_position" || field === "grid_position") ? "asc" : "desc";
+      }
+      renderRaceResults();
+    };
+
+    th.addEventListener("click", handleSort);
+    th.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleSort();
+      }
     });
   });
 }
@@ -68,6 +202,8 @@ function initRaceSelector() {
   select.value = selectedSessionKey;
   select.addEventListener("change", () => {
     selectedSessionKey = Number(select.value);
+    resultsSortField = null;
+    resultsSortDirection = "asc";
     renderSelectedRace();
   });
 }
@@ -98,6 +234,9 @@ function renderRaceResults() {
   const tbody = document.getElementById("results-tbody");
   const tabBtn = document.getElementById("tab-results");
   const viewSection = document.getElementById("view-results");
+  const noResultsBanner = document.getElementById("leaderboard-no-results-banner");
+  const podiumContainer = document.getElementById("results-podium");
+  const resetBtn = document.getElementById("reset-results-order");
   if (!tbody || !goldData) return;
 
   const results = raceRows("race_results");
@@ -105,6 +244,8 @@ function renderRaceResults() {
   // If no results for this race, hide the tab/view and switch to leaderboard if active
   if (!results.length) {
     if (tabBtn) tabBtn.style.display = "none";
+    if (noResultsBanner) noResultsBanner.style.display = "block";
+    if (podiumContainer) podiumContainer.style.display = "none";
     if (viewSection && viewSection.classList.contains("active")) {
       viewSection.classList.remove("active");
       if (tabBtn) tabBtn.classList.remove("active");
@@ -117,67 +258,96 @@ function renderRaceResults() {
   }
 
   if (tabBtn) tabBtn.style.display = "flex";
+  if (noResultsBanner) noResultsBanner.style.display = "none";
 
-  // Ordering contract:
-  // 1. final_position ascending with nulls last
-  // 2. Among null positions: DNF (0), DSQ (1), DNS (2), Unclassified (3)
-  const statusRank = { DNF: 0, DSQ: 1, DNS: 2, Unclassified: 3 };
-  const sorted = [...results].sort((a, b) => {
-    const aHasPos = a.final_position != null;
-    const bHasPos = b.final_position != null;
-    if (aHasPos && bHasPos) return a.final_position - b.final_position;
-    if (aHasPos && !bHasPos) return -1;
-    if (!aHasPos && bHasPos) return 1;
-    const aRank = statusRank[a.status] ?? 4;
-    const bRank = statusRank[b.status] ?? 4;
-    if (aRank !== bRank) return aRank - bRank;
-    return (a.driver_number || 0) - (b.driver_number || 0);
+  // Check if race has any starting grid data
+  const hasGrid = results.some((r) => r.grid_position != null);
+  document.querySelectorAll(".col-grid").forEach((th) => {
+    th.style.display = hasGrid ? "" : "none";
   });
+
+  // Podium Strip (P1 to P3)
+  const p1 = results.find((r) => r.final_position === 1);
+  const p2 = results.find((r) => r.final_position === 2);
+  const p3 = results.find((r) => r.final_position === 3);
+
+  if (podiumContainer) {
+    if (p1 && p2 && p3) {
+      podiumContainer.style.display = "grid";
+      const makePodiumCard = (pRow, posNum, posClass, badgeClass) => {
+        const teamColour = pRow.team_colour ? `#${pRow.team_colour}` : "#94a3b8";
+        const timeOrGap = posNum === 1 ? formatDuration(pRow.duration_seconds) : formatGap(pRow.gap_to_leader_seconds);
+        return `
+          <div class="podium-card ${posClass}">
+            <div class="podium-header">
+              <span class="podium-badge ${badgeClass}">P${posNum}</span>
+              <span class="podium-time">${timeOrGap}</span>
+            </div>
+            <div class="podium-driver">
+              <span class="team-stripe" style="background: ${teamColour};"></span>
+              <span>${pRow.driver_name}</span>
+              <span style="color: var(--text-muted); font-size: 11px;">(${pRow.name_acronym || pRow.driver_number})</span>
+            </div>
+            <div class="podium-team">${pRow.team_name || "—"}</div>
+          </div>
+        `;
+      };
+      podiumContainer.innerHTML =
+        makePodiumCard(p1, 1, "p1", "p1") +
+        makePodiumCard(p2, 2, "p2", "p2") +
+        makePodiumCard(p3, 3, "p3", "p3");
+    } else {
+      podiumContainer.style.display = "none";
+      podiumContainer.innerHTML = "";
+    }
+  }
+
+  // Row order: preserved by default, or stable sort if header clicked
+  let rowsToRender = [...results];
+  if (resultsSortField) {
+    const field = resultsSortField;
+    const dir = resultsSortDirection;
+    rowsToRender = [...results].map((r, i) => ({ r, i })).sort((a, b) => {
+      let va = a.r[field];
+      let vb = b.r[field];
+      if (va == null && vb == null) return a.i - b.i;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (va !== vb) {
+        return dir === "asc" ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1);
+      }
+      return a.i - b.i;
+    }).map((x) => x.r);
+  }
+
+  // Update sort headers aria-sort
+  document.querySelectorAll("#results-thead-tr th.sortable").forEach((th) => {
+    if (th.dataset.sort === resultsSortField) {
+      th.setAttribute("aria-sort", resultsSortDirection === "asc" ? "ascending" : "descending");
+    } else {
+      th.setAttribute("aria-sort", "none");
+    }
+  });
+
+  if (resetBtn) {
+    resetBtn.style.display = resultsSortField ? "inline-flex" : "none";
+  }
 
   tbody.innerHTML = "";
   document.getElementById("results-desc").textContent =
-    `Official classified finishing results for ${sorted.length} drivers.`;
+    `Official classified finishing results for ${results.length} drivers.`;
 
-  sorted.forEach((r) => {
+  rowsToRender.forEach((r) => {
     const tr = document.createElement("tr");
     const teamColour = r.team_colour ? `#${r.team_colour}` : "#94a3b8";
-    const statusClass = (r.status || "unclassified").toLowerCase();
-
-    // Position display: keeps position number if not null, otherwise "-"
-    const posDisplay = r.final_position != null ? `#${r.final_position}` : "—";
-
-    // Grid display
-    const gridDisplay = r.grid_position != null ? `P${r.grid_position}` : (r.grid_position_missing ? "PL" : "—");
-
-    // Positions gained
-    let gainedHtml = "—";
-    if (r.positions_gained != null) {
-      if (r.positions_gained > 0) {
-        gainedHtml = `<span class="pos-gain">▲ ${r.positions_gained}</span>`;
-      } else if (r.positions_gained < 0) {
-        gainedHtml = `<span class="pos-loss">▼ ${Math.abs(r.positions_gained)}</span>`;
-      } else {
-        gainedHtml = `<span class="pos-same">0</span>`;
-      }
-    }
-
-    // Gap / Time display
-    let timeGap = "—";
-    if (r.final_position === 1 && r.duration_seconds) {
-      const mins = Math.floor(r.duration_seconds / 60);
-      const secs = (r.duration_seconds % 60).toFixed(3);
-      timeGap = `${mins}:${secs.padStart(6, "0")}`;
-    } else if (r.gap_to_leader_seconds != null) {
-      timeGap = `+${r.gap_to_leader_seconds.toFixed(3)}s`;
-    } else if (r.laps_down != null) {
-      timeGap = `+${r.laps_down} ${r.laps_down === 1 ? "lap" : "laps"}`;
-    }
-
-    // Points display
-    const ptsDisplay = r.points != null ? (Number.isInteger(r.points) ? r.points : r.points.toFixed(1)) : "0";
+    const gained = formatPositionsGained(r.positions_gained);
+    const gridCells = hasGrid ? `
+      <td>${formatGridPosition(r.grid_position)}</td>
+      <td>${gained.html}</td>
+    ` : "";
 
     tr.innerHTML = `
-      <td style="font-weight: 800; color: #fff;">${posDisplay}</td>
+      <td style="font-weight: 800; color: #fff;">${formatFinalPosition(r.final_position)}</td>
       <td>
         <div class="team-pill">
           <span class="team-stripe" style="background: ${teamColour};"></span>
@@ -185,17 +355,18 @@ function renderRaceResults() {
           <span style="color: var(--text-muted); font-size: 11px;">(${r.name_acronym || r.driver_number})</span>
         </div>
       </td>
-      <td>${r.team_name || "N/A"}</td>
-      <td><span class="status-badge ${statusClass}">${r.status}</span></td>
-      <td>${gridDisplay}</td>
-      <td>${gainedHtml}</td>
+      <td>${r.team_name || "—"}</td>
+      ${gridCells}
+      <td>${formatStatusBadge(r.status, r.laps_down)}</td>
+      <td>${r.total_pit_stops != null ? r.total_pit_stops : "—"}</td>
+      <td style="font-family: var(--font-mono); font-size: 13px;">${formatTimeGap(r)}</td>
       <td>${r.number_of_laps != null ? r.number_of_laps : "—"}</td>
-      <td style="font-family: var(--font-mono); font-size: 13px;">${timeGap}</td>
-      <td style="font-weight: 800; color: #38bdf8;">${ptsDisplay}</td>
+      <td style="font-weight: 800; color: #38bdf8;">${formatPoints(r.points)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
+
 
 // Render Top Overview Cards
 function renderOverviewMetrics() {
