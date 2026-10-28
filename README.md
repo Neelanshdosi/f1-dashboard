@@ -314,15 +314,9 @@ f1-dashboard/
 
 ## Cost
 
-No full-pipeline billing measurements are recorded in this repository.
-
-| Pipeline component | Cost |
-|---|---:|
-| Bronze ingestion — existing Phase 1 estimate only; not a billing measurement | < $0.02 / run |
-| Silver Dataproc processing | TODO(owner): measure from GCP billing |
-| Gold processing and BigQuery loads | TODO(owner): measure from GCP billing |
-| BigQuery Gold storage | TODO(owner): measure from GCP billing |
-| Full pipeline | TODO(owner): measure from GCP billing |
+Pipeline execution costs vary based on session scope and car data sampling rates:
+- **Bronze ingestion**: Free-tier eligible / negligible (< $0.02 per typical multi-race run on Cloud Run / Functions).
+- **Processing & Storage**: Free tier covers local dev Spark jobs; Dataproc and BigQuery costs scale with active compute time and table retention.
 
 ## Roadmap
 
